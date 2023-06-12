@@ -1,12 +1,12 @@
 #include <dji_osdk_ros/iusl_img_manage.h>
 
-// ===================================================================================
-// ---------------------------  global param  ----------------------------------------
-// ===================================================================================
+/* ==================================================================================
+-----------------------------  global param   -------------------------------------
+===================================================================================*/
 // need manual setup
 std::string data_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/obj.data";
 std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj.cfg";
-std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj.weights";
+std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj_best.weights";
 int gim_max_speed = 8;
 float gim_control_k = 0.015;
 
@@ -17,13 +17,11 @@ int net_width;
 int net_height;
 
 // global state updated
-cv::Mat cv_img_resize;
-cv::Rect2d box(0,0,1,1);
-float detect_prob = 0;
-bool box_ok = false;
-dji_osdk_ros::iuslDetectionResult detect_result;
-
-bool rtk_enable_OK = false;
+cv::Mat cv_img_resize;            // 需要处理的照片
+cv::Rect2d box(0,0,1,1);          // 检测框
+float detect_probability = 0;     // 检测到的概率
+bool box_ok = false;              // 当前是否检测到
+dji_osdk_ros::iuslDetectionResult detect_result;        // 检测结果
 
 float gim_pitch_now = 0;
 float gim_yaw_now = 0;
@@ -35,21 +33,22 @@ float UAV_vx_now = 0;
 float UAV_vy_now = 0;
 float laser_dis_now = 0;
 
-
-time_t time_now_c;  // for img file save
+time_t time_now_c;                // for img file save
 double image_time = 0;
 int flight_state = 0;
 
 
-// ==
-
+/* ===================================================================================
+-----------------------------  receive callback  ------------------------------------
+===================================================================================*/
+// 收到图像后：yolo 检测、
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   image_time =  ros::Time::now().toSec();
-  /* --- ROS img to CV img --- */
+  // ROS img convert to CV img 
   cv::Mat cv_img = cv_bridge::toCvShare(msg, "bgr8")->image; 
   if (cv_img.empty()) return; 
-  /* ---  cv img crop, using the center of height --- */
+  // cv img crop, using the center of height 
   int cv_img_width = cv_img.cols;
   int cv_img_height = cv_img.rows;
   int cv_expect_height = cv_img_width/16*9;
@@ -65,7 +64,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   else
     cv_img_resize = cv_img.clone();
     
-  // detect
+  // yolo detect
   auto bboxt_lists = detector.detect(cv_img_resize,0.6);
   if (bboxt_lists.size() > 0 )
   { 
@@ -73,7 +72,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     box.y = bboxt_lists[0].y;
     box.width = bboxt_lists[0].w;
     box.height = bboxt_lists[0].h;
-    detect_prob = bboxt_lists[0].prob; 
+    detect_probability = bboxt_lists[0].prob; 
     box_ok = true;
   }
   else
@@ -83,8 +82,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   // update pub msg (detect_result)
   if (box_ok)
   {
+    detect_result.img_time = image_time;
     detect_result.center_x = box.x + box.width/2;
     detect_result.center_y = box.y + box.height/2;
+    detect_result.box_width = box.width;
+    detect_result.box_height = box.height;
     detect_result.max_length = std::max(box.width, box.height);
     detect_result.pitch = gim_pitch_now;
     detect_result.yaw = gim_yaw_now;
@@ -95,29 +97,17 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     detect_result.UAV_vx = UAV_vx_now;
     detect_result.UAV_vy = UAV_vy_now;
     detect_result.laser_dis = laser_dis_now;
-    if (flight_state > 1.5)
+    /*if (flight_state > 1.5)
     {
-      /* --- put text --- */
+      // put text 
       cv::Rect roi(box.x, box.y, box.width, box.height);
       cv::rectangle(cv_img_resize, roi, cv::Scalar(0,255,0), 2, 8, 0 ); 
-      //putText(cv_img_resize, "MAV " + std::to_string(detect_prob), cv::Point2f(box.x, box.y - 14), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 255, 0), 2);
-      /* --- write detect img--- */
+      //putText(cv_img_resize, "MAV " + std::to_string(detect_probability), cv::Point2f(box.x, box.y - 14), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 255, 0), 2);
+      // write detect img
       std::string time_path = std::to_string(image_time);
       std::string path_detect = "/home/dji/bigDisk/img_detect/" + time_path + ".png";
       cv::imwrite(path_detect, cv_img_resize); 
-    }
-  }
-}
-
-void rtkStateCallback(const std_msgs::UInt8& msg)   // rtk State
-{
-  if (msg.data == 1)
-  {
-    rtk_enable_OK = true;
-  }
-  else
-  {
-    rtk_enable_OK = false;
+    } */
   }
 }
 
@@ -157,61 +147,62 @@ void flightStateCallback(const std_msgs::UInt8& msg)
   flight_state = msg.data;
 }
 
+
+/* ===================================================================================
+-------------------------------  node main  ------------------------------------------
+===================================================================================*/
 int main(int argc, char **argv)
 {
-  /* ---   init  --- */ 
-  ros::init(argc, argv, "iusl_img_manage");  // --- ros init
+  // node init  
+  ros::init(argc, argv, "iusl_img_manage");  // ros init
   ros::NodeHandle nh;
   image_transport::ImageTransport it(nh);
   ros::Rate rate(50);
   //cv::namedWindow("view");
-  now_time=ros::Time::now();                 // --- for calculate fps
-  net_width = detector.get_net_width();      // --- detecotor
+  net_width = detector.get_net_width();      // detecotor
   net_height = detector.get_net_height();
   
-  /* ---   start main camera stream  --- */ 
+  // start main camera stream 
   ros::service::waitForService("/setup_camera_stream");
   ros::ServiceClient set_camera_client = nh.serviceClient<dji_osdk_ros::SetupCameraStream>("/setup_camera_stream");
   dji_osdk_ros::SetupCameraStream set_camera_srv;
   set_camera_srv.request.cameraType = 1;
   set_camera_srv.request.start = 1;
   set_camera_client.call(set_camera_srv);
-  //ROS_INFO("start main camera ======================================================");
+  //ROS_INFO("start main camera ");
 
-  /* ---   start RTK  --- */ 
+  // start RTK
   //ros::service::waitForService("iusl/set_rtk_enable");
   //ros::ServiceClient set_RTK_client = nh.serviceClient<dji_osdk_ros::iuslSetRtkEnable>("iusl/set_rtk_enable");
   //dji_osdk_ros::SetupCameraStream set_rtk_srv;
   //set_RTK_client.call(set_rtk_srv);
-  
 
-
-  /* ---   publisher  --- */  
-  ros::Publisher DetectionResultPublisher = nh.advertise<dji_osdk_ros::iuslDetectionResult>("/iusl_ros/DetectionResult", 1);
-  ros::Publisher GimCmdPublisher = nh.advertise<dji_osdk_ros::iuslGimbalCmd>("/iusl_ros/gimbal_cmd", 5);
-
-  /* ---   subscriber msg  --- */
+  // subscriber msg
   image_transport::Subscriber sub_img = it.subscribe("iusl/main_camera_images", 1, imageCallback);
-  ros::Subscriber sub_rtk_state = nh.subscribe("dji_osdk_ros/rtk_connection_status", 5, rtkStateCallback);
   ros::Subscriber sub_rtk_pos = nh.subscribe("dji_osdk_ros/rtk_position", 5, rtkPosCallback);
   ros::Subscriber sub_rtk_vel = nh.subscribe("dji_osdk_ros/rtk_velocity", 5, rtkVelCallback);
   ros::Subscriber sub_gim_angle = nh.subscribe("dji_osdk_ros/gimbal_angle", 5, gimbalAngleCallback);
   ros::Subscriber sub_mobile = nh.subscribe("dji_osdk_ros/from_mobile_data", 5, mobileCallback);  //laser message
   ros::Subscriber sub_flight_state = nh.subscribe("dji_osdk_ros/flight_status", 5, flightStateCallback);
 
-  /* ---   while --- */
+
+  // publisher 
+  ros::Publisher DetectionResultPublisher = nh.advertise<dji_osdk_ros::iuslDetectionResult>("/iusl_ros/DetectionResult", 1);
+  ros::Publisher GimCmdPublisher = nh.advertise<dji_osdk_ros::iuslGimbalCmd>("/iusl_ros/gimbal_cmd", 5);
+
+  
+  //  while
  
   while(ros::ok())
   { 
     if (!cv_img_resize.empty() && flight_state > 1.5)
     {
-      /* ---   gimbal cmd; fps; pub  --- */
+      // gimbal cmd; fps; pub  
       if (box_ok)
       { 
         box_ok = false;
         
-
-        /* ---   gimbal cmd  --- */
+        // gimbal cmd
         dji_osdk_ros::iuslGimbalCmd GimCmd_data;
         int dx = net_width/2 - detect_result.center_x;
         int dy = net_height/2 - detect_result.center_y;
@@ -226,15 +217,10 @@ int main(int argc, char **argv)
         GimCmd_data.pitch = gim_speed_q + gim_pitch_now;
         GimCmd_data.yaw = gim_speed_r + gim_yaw_now;
         GimCmd_data.roll = 0;   
-        GimCmdPublisher.publish(GimCmd_data);
-        /* ---  fps calculate --- */
-        ros::Time now_tem = ros::Time::now();
-        ros::Duration dt = now_tem - now_time;
-        //std::cout << 1/dt.toSec() << std::endl;
-        now_time = now_tem;
-        /* ---  pub detect result --- */
-        DetectionResultPublisher.publish(detect_result); 
-      }
+        GimCmdPublisher.publish(GimCmd_data);    // 发送 ros_msg 云台控制指令
+        //  pub detect result
+        DetectionResultPublisher.publish(detect_result);     // 发送 ros_msg 目标检测结果
+      }  
       //cv::imshow("view", cv_img_resize);
       //cv::waitKey(10);
     }

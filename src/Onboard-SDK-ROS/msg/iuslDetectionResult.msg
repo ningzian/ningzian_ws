@@ -1,6 +1,11 @@
+# time
+float64 image_time
+
 # boundingbox
 int64 center_x
 int64 center_y
+int64 box_width
+int64 box_height
 int64 max_length
 
 # gimbal state
