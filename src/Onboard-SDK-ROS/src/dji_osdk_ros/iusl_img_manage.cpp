@@ -10,7 +10,10 @@ std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/dark
 int gim_max_speed = 8;
 float gim_control_k = 0.015;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 70029bc (new)
 // global param
 Detector detector(cfg_file, weight_file, 0);     // darknet detector
 ros::Time now_time;   // 当前时间
