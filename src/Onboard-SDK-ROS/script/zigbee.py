@@ -15,6 +15,8 @@ from std_msgs.msg import Int16            # rtk yaw
 from std_msgs.msg import UInt8            # ground mission cmd, flight state
 
 
+
+
 # 0. =========== global state ==================
 flying = False
 ground_mission_cmd = 0            # 1 start mission, 2 pause mission, 3 go home
