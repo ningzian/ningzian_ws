@@ -1,0 +1,8 @@
+prefix=/home/dji/ningzian_ws/devel
+
+Name: mavlink_bridge
+Description: Description of mavlink_bridge
+Version: 0.0.1
+Cflags: 
+Libs: -L/home/dji/ningzian_ws/devel/lib 
+Requires: 
