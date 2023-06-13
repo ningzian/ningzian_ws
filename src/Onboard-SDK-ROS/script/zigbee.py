@@ -1,6 +1,13 @@
 #! /usr/bin/env python
 # coding=utf-8
 
+"""
+功能：
+  - zigbee接收地面站的cmd，并保存成bag
+  - 接收控制节点的发射网枪指令，用zigbee发送给地面站是否auto fire
+bag保存：地面站CMD
+"""
+
 import rospy
 import rosbag
 import serial
@@ -15,16 +22,27 @@ from std_msgs.msg import Int16            # rtk yaw
 from std_msgs.msg import UInt8            # ground mission cmd, flight state
 
 
+# ==================================================================================
+#-----------------------------  global param   -------------------------------------
+#===================================================================================
+
+# need manual setup
+zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
 
 
-# 0. =========== global state ==================
-flying = False
-ground_mission_cmd = 0            # 1 start mission, 2 pause mission, 3 go home
-auto_fire_cmd = False             # from control node
+# updated states
+flying = False                # 无人机是否在飞行状态
+ground_mission_cmd = 0        # 1 start mission, 2 pause mission, 3 go home
+auto_fire_cmd = False         # from control node
+bag_start = False             # 是否开始记录bag
 
 
-# 1. ========== receive call back ===============
-# ------1.1 update global state 
+
+# ==================================================================================
+#---------------------------  receive call back   ----------------------------------
+#===================================================================================
+
+# 接收飞机是否在飞行，更新飞行状态，用于bag记录
 def callback_flight_state(msg):
   global flying
   if msg.data < 1.6:
@@ -33,31 +51,18 @@ def callback_flight_state(msg):
     flying = True
   return
 
-# ------1.2 auto fire cmd from control
+# 接收发射网枪的指令，如果有发射指令，将指令返回给地面站
 def callback_autofire_cmd(msg):
+  global zigbee_serial
+  if msg.cmd:
+    data = [237, 1, 0, 2, 255]    # ED 01 00 02 FF
+    zigbee_serial.write(data)
+  return
 
 
-
-
-# =================================  init  =====================================================
-rospy.init_node('zigbee', anonymous=True)
-rate = rospy.Rate(50)
-zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
-
-
-# --------------  UAV state ---------------
-
-
-# --------- sub msg -----------
-rospy.Subscriber('dji_osdk_ros/flight_status', UInt8, callback_flight_state)
-
-
-# --------- pub msg -----------
-ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=5)
-
-
-
-# ==============================  while and calculate  =========================================
+# ==================================================================================
+#----------------------------  custom functions   ----------------------------------
+#===================================================================================
 def decode(data):
     de_data1 = Decimal(str(data[0])) * Decimal(256) * Decimal(256) + Decimal(str(data[1])) * Decimal(256) + Decimal(str(data[2])) - Decimal(1000000)
     de_data2 = Decimal(str(data[3]))/Decimal(100)
@@ -73,9 +78,22 @@ def encode(data):
     data22 = int(data2%Decimal(256))
     en_data = [data11, data12, data13, data22]
     return en_data
+  
+
+
+# ==================================================================================
+#--------------------------------  node main   -------------------------------------
+#===================================================================================
+rospy.init_node('zigbee', anonymous=True)
+rate = rospy.Rate(50)
+
+# sub msg 
+rospy.Subscriber('dji_osdk_ros/flight_status', UInt8, callback_flight_state)
+# pub msg 
+ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=5)
 
 while True:
-  # ------------ rosbag ----------
+  # rosbag 
   if bag_start and (not flying):
     bag_ground_cmd.close()
     bag_start = False
@@ -83,7 +101,7 @@ while True:
     bag_ground_cmd = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'Ground_cmd.bag', 'w')
     bag_start = True
 
-  # ------------ zigbee receive, receive from ground station: misssion cmd; target pos-----------
+  # zigbee receive, receive from ground station: misssion cmd
   data_tem = zigbee_serial.read(1)
   if data_tem == '\xed':
     num = zigbee_serial.read(1)

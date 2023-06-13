@@ -1,6 +1,13 @@
 #! /usr/bin/env python
 # coding=utf-8
 
+"""
+功能：
+   - 从视觉检测节点接收检测信息，估计目标的运动状态，并发送给控制节点
+   - 
+bag保存：
+"""
+
 import rospy
 import rosbag
 import numpy as np
@@ -17,7 +24,83 @@ from std_msgs.msg import UInt8                 # flight state
 from std_msgs.msg import Int32MultiArray
 
 
-# =============================  call back, update global state =====================================
+
+# ==================================================================================
+# ============================  global param   =====================================
+# ==================================================================================
+
+# ---------------  need setup  -----------------------
+Orig_lat = math.radians(30.12997303560482)    # 原点的经纬度和海拔
+Orig_lon = math.radians(120.07509457775448)   # 云栖（待验证）（30.12997303560482、120.07509457775448、16.8）
+Orig_alt = 10.                                # 云谷（需要打点）
+
+est_UAV_real_length = 0.47                    # 目标的尺寸信息
+
+kf_Q = np.zeros([6, 6])             # 卡尔曼滤波的参数
+kf_Q[3, 3] = 0.1 
+kf_Q[4, 4] = 0.1 
+kf_Q[5, 5] = 0.1 
+kf_R_original = np.zeros([4, 4])
+kf_R_original[0, 0] = 0.0001
+kf_R_original[1, 1] = 0.0001
+kf_R_original[2, 2] = 0.0001
+kf_R_original[3, 3] = 1        # 如果有激光测距数据，此值会更新成 0.000001 TODO!
+kf_P = np.zeros([6, 6])
+kf_P[0, 0] = 0.1
+kf_P[1, 1] = 0.1
+kf_P[2, 2] = 0.1
+kf_P[3, 3] = 0.1
+kf_P[4, 4] = 0.1
+kf_P[5, 5] = 0.1
+
+
+
+# ----------------  updated states  ---------------------
+ground_mission_cmd = 0        # 1 开始, 2 暂停, 3 返航
+flying = False                # 飞机是否在空中
+bag_start = False
+
+measure_is_new = False  
+measure_time_stamp =0.
+measure_center_x = 0.
+measure_center_y = 0.
+measure_max_length = 0.
+measure_gim_pitch = 0.
+measure_gim_yaw = 0.
+measure_gim_roll = 0.
+measure_UAV_x = 0.
+measure_UAV_y = 0.
+measure_UAV_z = 0.
+measure_laser_dis = 0.
+
+est_kf_OK = False
+kf_estimated_state = np.array([[0],[0],[0], [0], [0], [0]])    # initial state
+
+est_tar_state = iuslTarState()
+est_tar_state.tar_OK = False
+est_tar_state.tar_x = 0.
+est_tar_state.tar_y = 0.
+est_tar_state.tar_z = 0.
+est_tar_state.tar_vx = 0.
+est_tar_state.tar_vy = 0.
+
+# --------------------  static param  ----------------------------------
+Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])   # H20T 1536x864
+R_1_c2g = np.array([[0, 0, 1],[1, 0, 0],[0, 1, 0]])
+cam_f = 0.0045  # for 1536x864
+cam_s = 0.000004093  # for 1536x864
+net_width = 1536
+net_height = 864
+kf_F = np.identity(6)
+kf_F[0, 3] = 0.02
+kf_F[1, 4] = 0.02
+kf_F[2, 5] = 0.02
+
+
+
+# ==================================================================================
+# ============================  receive callback   =====================================
+# ==================================================================================
 def callback_recive_DetectionResult(msg):      # 
   global Orig_lat
   global Orig_lon
@@ -27,6 +110,7 @@ def callback_recive_DetectionResult(msg):      #
   global measure_time_stamp
   global measure_center_x
   global measure_center_y
+  global measure_
   global measure_max_length
   global measure_gim_pitch
   global measure_gim_yaw
@@ -37,7 +121,7 @@ def callback_recive_DetectionResult(msg):      #
   global measure_laser_dis
 
   measure_is_new = True   
-  measure_time_stamp = rospy.Time.now()
+  measure_time_stamp = msg.time
   measure_center_x = msg.center_x
   measure_center_y = msg.center_y
   measure_max_length = msg.max_length
@@ -69,85 +153,23 @@ def callback_flight_state(msg):
   return
 
 
-# =================================  init  =====================================================
+# ==================================================================================
+#--------------------------------  node main   -------------------------------------
+#===================================================================================
 rospy.init_node('estimate', anonymous=True)
 rate = rospy.Rate(50)
 
-# --------------  static param  ---------------
-Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])   # H20T 1536x864
-R_1_c2g = np.array([[0, 0, 1],[1, 0, 0],[0, 1, 0]])
-
-Orig_lat = math.radians(30.12997303560482) # math.radians(30.12974118425157)   # aliyun gross
-Orig_lon = math.radians(120.07509457775448) # math.radians(120.07765047891777)
-Orig_alt = 10.             # 16.5
-
-net_width = 1536
-net_height = 864
-cam_f = 0.0045  # for 1536x864
-cam_s = 0.000004093  # for 1536x864
-kf_F = np.identity(6)
-kf_F[0, 3] = 0.02
-kf_F[1, 4] = 0.02
-kf_F[2, 5] = 0.02
-kf_Q = np.zeros([6, 6])
-kf_Q[3, 3] = 0.1 
-kf_Q[4, 4] = 0.1 
-kf_Q[5, 5] = 0.1 
-kf_R_original = np.zeros([4, 4])
-kf_R_original[0, 0] = 0.0001
-kf_R_original[1, 1] = 0.0001
-kf_R_original[2, 2] = 0.0001
-kf_R_original[3, 3] = 0.1
-
-# --------------  updated state ---------------
-measure_is_new = False  
-measure_time_stamp =0.
-measure_center_x = 0.
-measure_center_y = 0.
-measure_max_length = 0.
-measure_gim_pitch = 0.
-measure_gim_yaw = 0.
-measure_gim_roll = 0.
-measure_UAV_x = 0.
-measure_UAV_y = 0.
-measure_UAV_z = 0.
-measure_laser_dis = 0.
-
-est_UAV_real_length = 0.47
-est_kf_OK = False
-kf_estimated_state = np.array([[0],[0],[0], [0], [0], [0]])    # initial state
-kf_P = np.zeros([6, 6])
-kf_P[0, 0] = 0.1
-kf_P[1, 1] = 0.1
-kf_P[2, 2] = 0.1
-kf_P[3, 3] = 0.1
-kf_P[4, 4] = 0.1
-kf_P[5, 5] = 0.1
-
-est_tar_state = iuslTarState()
-est_tar_state.tar_OK = False
-est_tar_state.tar_x = 0.
-est_tar_state.tar_y = 0.
-est_tar_state.tar_z = 0.
-est_tar_state.tar_vx = 0.
-est_tar_state.tar_vy = 0.
-
-flying = False         # false, on the ground; true, in the air
-bag_start = False
-
-# ---------------------- sub msg ---------------------------------
+# sub msg 
 rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
 rospy.Subscriber('dji_osdk_ros/flight_status', UInt8, callback_flight_state)
 
-# --------------------- pub msg ----------------------------------
+# pub msg 
 est_tar_state_publisher = rospy.Publisher('/iusl_ros/estimate_tar_state', iuslTarState, queue_size=5)
-mobileBox_publisher = rospy.Publisher('/iusl_ros/mobile_box', Int32MultiArray, queue_size=5);
+mobileBox_publisher = rospy.Publisher('/iusl_ros/mobile_box', Int32MultiArray, queue_size=5)
 
 
-
-# ==============================  while and calculate  =========================================
 while True:
-  # ---------- rosbag -----------
+  # rosbag 
   if bag_start and (not flying):
     bag_est_tar_state.close()
     bag_start = False
@@ -155,7 +177,7 @@ while True:
     bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
     bag_start = True
 
-  # ---------- calculate duration, for plkf reinit ------------------------
+  # calculate duration, for plkf reinit 
   time_now = rospy.Time.now()
   dt = (time_now - measure_time_stamp).to_sec()
   if dt > 6:
@@ -169,10 +191,10 @@ while True:
     kf_P[5, 5] = 0.1
     kf_R_original[3, 3] = 0.1
     
-  # ---------  if there is a new measurment, do all PLKF steps  ---------------
+  # if there is a new measurment, do all PLKF steps
   if measure_is_new: 
     measure_is_new = False
-    # ------- cal direction --------
+    # cal direction 
     pos_tar_p = np.array([[measure_center_x],[measure_center_y],[1]])
     direction_c = np.dot(np.linalg.inv(Intrinsic_Matrix), pos_tar_p)
     p_tem = math.radians(measure_gim_pitch)
@@ -185,7 +207,7 @@ while True:
     direction_g = np.dot(R_Mat_c2g, direction_c)
     est_direction_g_bar = direction_g/np.linalg.norm(direction_g)
     
-    # ------- cal dis -----------
+    # cal dis 
     dx = net_width/2 - measure_center_x
     dy = net_height/2 - measure_center_y
     if abs(dx) < measure_max_length/3 and abs(dy) < measure_max_length/6 and measure_laser_dis < 15 and measure_laser_dis > 3:
@@ -196,18 +218,14 @@ while True:
       if measure_max_length < 1:  #(prevent division of zero) 
         measure_max_length = 1
       est_dis = est_UAV_real_length * math.sqrt(cam_f**2 + (dx**2 + dy**2) * (cam_s**2)) / (measure_max_length * cam_s)
-    lasor_dist = Int32MultiArray()
+
+    # 发送估计的距离到遥PSDK
+    dis_to_mobile = Int32MultiArray()
     M_data_int = int (est_dis) 
     M_data_dec = int ((est_dis - M_data_int) * 10) 
-    lasor_dist.data.append(M_data_int)
-    lasor_dist.data.append(M_data_dec)
-    ''' to be solved.
-    print("estimated distance", est_dis)
-    print("integer", M_data_int)
-    print("decimal", M_data_dec)
-    print("lasor_dist", lasor_dist)   ## sometimes when receiving from this topic, the decimal part can become zero. The reason is two publishers send msgs to the same topic at the same time, the receive end will parse them in a unmanageable way.  to be solved.
-    '''
-    mobileBox_publisher.publish(lasor_dist)
+    dis_to_mobile.data.append(M_data_int)
+    dis_to_mobile.data.append(M_data_dec)
+    mobileBox_publisher.publish(dis_to_mobile)
 
     
     # -------- PLKF process -----------

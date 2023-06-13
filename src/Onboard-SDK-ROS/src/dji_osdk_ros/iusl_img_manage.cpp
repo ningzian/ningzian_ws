@@ -1,3 +1,10 @@
+/*
+功能：
+  - 接收vehicle_node的图像，做视觉目标检测，将检测结果和无人机自己的各种状态打包，发送给估计节点
+  - 根据检测结果，做云台跟踪控制
+注意：目标检测的结果msg数据中已经包含了时间戳
+*/
+
 #include <dji_osdk_ros/iusl_img_manage.h>
 
 /* ==================================================================================
@@ -82,7 +89,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   // update pub msg (detect_result)
   if (box_ok)
   {
-    detect_result.img_time = image_time;
+    detect_result.time = image_time;
     detect_result.center_x = box.x + box.width/2;
     detect_result.center_y = box.y + box.height/2;
     detect_result.box_width = box.width;

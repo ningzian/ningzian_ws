@@ -1,5 +1,5 @@
 # time
-float64 image_time
+float64 time
 
 # boundingbox
 int64 center_x

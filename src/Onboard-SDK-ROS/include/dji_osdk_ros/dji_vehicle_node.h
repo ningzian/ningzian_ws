@@ -349,9 +349,9 @@ namespace dji_osdk_ros
       ros::Publisher waypointV2_mission_state_publisher_;
       ros::Publisher waypointV2_mission_event_publisher_;
 
-      ros::Subscriber iusl_Gimbal_Cmd_subscriber;     // iusl, ningzian, gimbal cmd, for gimbal control
-      ros::Subscriber iusl_mobile_box_subscriber;     // iusl, ningzian, mobile box
-      ros::Subscriber iusl_UAV_Ctrl_Cmd_subscriber;    // iusl, ningzian, UAV control cmd
+      ros::Subscriber iusl_Gimbal_Cmd_subscriber;         // iusl, ningzian, gimbal cmd, for gimbal control
+      ros::Subscriber iusl_to_mobile_data_subscriber;     // iusl, ningzian, 发送到PSDK的检测框和估计的距离信息
+      ros::Subscriber iusl_UAV_Ctrl_Cmd_subscriber;       // iusl, ningzian, UAV control cmd
 
     protected:
       /*! for general */
@@ -487,7 +487,7 @@ namespace dji_osdk_ros
       bool iuslSetRtkEnableCallback(dji_osdk_ros::iuslSetRtkEnable::Request &request, 
                                     dji_osdk_ros::iuslSetRtkEnable::Response &response);  // iusl, ningzian, enable RTK srv callback
       void iuslGimbalCmdCallback(const dji_osdk_ros::iuslGimbalCmd &msg);   // iusl, ningzian, gimbal control
-      void iuslMobileBoxCallback(const std_msgs::Int32MultiArray & msg);    // iusl, ningzian, mobile box
+      void iuslTOMobileDataCallback(const std_msgs::Int32MultiArray & msg);    // iusl, ningzian, mobile box
       void iuslUAVCtrlCMDCallback(const dji_osdk_ros::iuslUAVCtrlCmd &msg); // iusl, ningzian, UAV control
 
       bool initSubscribe();

@@ -410,7 +410,7 @@ bool VehicleNode::initTopic()
   waypointV2_mission_event_publisher_ = nh_.advertise<dji_osdk_ros::WaypointV2MissionEventPush>("dji_osdk_ros/waypointV2_mission_event", 10);
 
   iusl_Gimbal_Cmd_subscriber = nh_.subscribe("/iusl_ros/gimbal_cmd", 5, &VehicleNode::iuslGimbalCmdCallback, this);      // iusl ningzian, for gimbal control
-  iusl_mobile_box_subscriber = nh_.subscribe("/iusl_ros/mobile_box", 5, &VehicleNode::iuslMobileBoxCallback, this);       // iusl ningzian, for mobile show box
+  iusl_to_mobile_data_subscriber = nh_.subscribe("/iusl_ros/mobile_box", 5, &VehicleNode::iuslTOMobileDataCallback, this);       // iusl ningzian, for mobile show box
   iusl_UAV_Ctrl_Cmd_subscriber = nh_.subscribe("/iusl_ros/UAV_control_cmd", 5, &VehicleNode::iuslUAVCtrlCMDCallback, this);  // iusl ningzian, for UAV Ctrol 
 
   if(ptr_wrapper_ == nullptr)
@@ -1824,10 +1824,10 @@ void VehicleNode::iuslGimbalCmdCallback(const dji_osdk_ros::iuslGimbalCmd &msg) 
   ptr_wrapper_ -> rotateGimbal(static_cast<PayloadIndex>(0), gimCmd);
 }
 
-void VehicleNode::iuslMobileBoxCallback(const std_msgs::Int32MultiArray & msg)   // iusl, ningzian, mobile box
+void VehicleNode::iuslTOMobileDataCallback(const std_msgs::Int32MultiArray & msg)   // iusl, ningzian, 发送box、估计的距离到PSDK
 {
   if(msg.data.size() == 0) return;
-  if(msg.data.size() == 2) //receive distance from lasor.
+  if(msg.data.size() == 2) // 估计的距离信息
   {
      uint8_t data[4];
      
@@ -1838,7 +1838,7 @@ void VehicleNode::iuslMobileBoxCallback(const std_msgs::Int32MultiArray & msg)  
      }
      ptr_wrapper_->sendDataToMSDK(data, 4);
   }
-  if(msg.data.size() == 4) //receive mobile box.
+  if(msg.data.size() == 4) // 检测到的检测框
   {
      uint8_t data[8];
   

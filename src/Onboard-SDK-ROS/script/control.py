@@ -28,6 +28,8 @@ from dji_osdk_ros.srv import ObtainControlAuthority
 # ========================= global states ==================================================
 # ==========================================================================================
 
+# need manual setup
+netgun_serial = serial.Serial('/dev/ttyUSB1', 9600, timeout=0.5) 
 
 
 # ===========================================================================================
@@ -158,7 +160,6 @@ Orig_lat = math.radians(30.129161866939494) # math.radians(30.12974118425157)   
 Orig_lon = math.radians(120.07418009681075) # math.radians(120.07765047891777)
 Orig_alt = 0.             # 16.5
 
-net_serial = serial.Serial('/dev/ttyUSB1', 115200, timeout=0.5)
 
 # --------------  updated state ---------------
 est_tar_x = 0.         # received estimated target state (pos and vel)
@@ -368,7 +369,6 @@ while True:
   ## fire
   if (mission_state == 2 or mission_state == 3 or mission_state == 4) and flying and (not net_fired) and ground_mission_cmd == 5:
     fire_data = [255, 35, 7, 1, 42, 255, 61]
-    net_serial.write(fire_data)
     net_fired = True
 
 
