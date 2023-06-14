@@ -15,11 +15,21 @@
 #include <time.h>
 #include <iostream>
 
+#include <Eigen/Dense>     // eigen， 用于四元数到欧拉角的转换
+#include <Eigen/Geometry>
+#include <Eigen/StdVector>
+#include <Eigen/Core>
+#include <math.h>
+
 // msg
 #include <dji_osdk_ros/iuslDetectionResult.h>// detection result (including box, gim state, UAV state)
 #include <geometry_msgs/Vector3Stamped.h>    // gimbal state,  UAV RTK velocity
 #include <sensor_msgs/NavSatFix.h>           // UAV RTK position
+#include <geometry_msgs/QuaternionStamped.h> // 无人机姿态信息
+#include <geometry_msgs/Quaternion.h>
 #include <std_msgs/UInt8.h>                  // RTK state, flight state
+#include <std_msgs/UInt16.h> 
+#include <std_msgs/Float64>
 #include <dji_osdk_ros/MobileData.h>         // mobile data
 #include <dji_osdk_ros/iuslGimbalCmd.h>      // gimbal control
 #include <std_msgs/Int32MultiArray.h>        // mobile box
@@ -31,18 +41,20 @@
 // iusl msg and srv
 
 
-
+#define  PI 3.141592653
 
 
 
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg);  // read img detect call back
-void rtkStateCallback(const std_msgs::UInt8& msg);  //read rtk enable state
+
 void rtkPosCallback(const sensor_msgs::NavSatFix& msg);  //read rtk pos
-void rtkVelCallback(const geometry_msgs::Vector3Stamped & msg);  //read rtk vel
+void callback_recive_rtkYaw(const std_msgs::UInt16& msg);  //读取无人机的RTKyaw
+void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg);  //无人机自身的姿态
 void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg);  //read gimbal angle
+
 void mobileCallback(const dji_osdk_ros::MobileData & msg); 
-void flightStateCallback(const std_msgs::UInt8& msg);  //read flight state
+
 
 
 

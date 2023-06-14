@@ -3,9 +3,10 @@
 
 """
 功能：
-  - zigbee接收地面站的cmd，并保存成bag
+  - zigbee接收地面站的cmd，发送给控制节点用于开始跟踪，发送给其他节点用于bag保存
   - 接收控制节点的发射网枪指令，用zigbee发送给地面站是否auto fire
-bag保存：地面站CMD
+bag保存：（保存从 ground_mission_start 到 auto_fire 时间段内的bag信息）
+  - 地面站指令
 """
 
 import rospy
@@ -20,43 +21,18 @@ from dji_osdk_ros.msg import iuslTarState
 from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import Int16            # rtk yaw
 from std_msgs.msg import UInt8            # ground mission cmd, flight state
-
-
-# ==================================================================================
-#-----------------------------  global param   -------------------------------------
-#===================================================================================
-
-# need manual setup
-zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
-
-
-# updated states
-flying = False                # 无人机是否在飞行状态
-ground_mission_cmd = 0        # 1 start mission, 2 pause mission, 3 go home
-auto_fire_cmd = False         # from control node
-bag_start = False             # 是否开始记录bag
-
-
+from std_msgs.msg import Bool             # auto fire
 
 # ==================================================================================
 #---------------------------  receive call back   ----------------------------------
 #===================================================================================
 
-# 接收飞机是否在飞行，更新飞行状态，用于bag记录
-def callback_flight_state(msg):
-  global flying
-  if msg.data < 1.6:
-    flying = False
-  elif msg.data > 1.7: 
-    flying = True
-  return
-
 # 接收发射网枪的指令，如果有发射指令，将指令返回给地面站
 def callback_autofire_cmd(msg):
   global zigbee_serial
-  if msg.cmd:
-    data = [237, 1, 0, 2, 255]    # ED 01 00 02 FF
-    zigbee_serial.write(data)
+  if msg.data:
+    send_data = [237, 1, 0, 2, 255]    # ED 01 00 02 FF
+    zigbee_serial.write(send_data)
   return
 
 
@@ -82,23 +58,38 @@ def encode(data):
 
 
 # ==================================================================================
+#-----------------------------  global param   -------------------------------------
+#===================================================================================
+
+# need manual setup
+zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
+
+
+# updated states
+ground_mission_cmd = 0        # 1 start mission, 2 pause mission, 3 go home
+ground_mission_start = False
+auto_fire_cmd = False         # from control node
+bag_start = False             # 是否开始记录bag
+
+
+# ==================================================================================
 #--------------------------------  node main   -------------------------------------
 #===================================================================================
 rospy.init_node('zigbee', anonymous=True)
 rate = rospy.Rate(50)
 
 # sub msg 
-rospy.Subscriber('dji_osdk_ros/flight_status', UInt8, callback_flight_state)
+rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
 # pub msg 
-ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=5)
+ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=3)
 
 while True:
   # rosbag 
-  if bag_start and (not flying):
+  if bag_start and auto_fire_cmd:
     bag_ground_cmd.close()
     bag_start = False
-  if (not bag_start) and flying:
-    bag_ground_cmd = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'Ground_cmd.bag', 'w')
+  if (not bag_start) and ground_mission_start:
+    bag_ground_cmd = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'ground_cmd.bag', 'w')
     bag_start = True
 
   # zigbee receive, receive from ground station: misssion cmd
@@ -113,11 +104,17 @@ while True:
     zigbee_serial.reset_input_buffer()
     if sourceID == 1:    # from ground station
       if num == 1:
-        mission_cmd = data[0]
-        ground_mission_cmd_publisher.publish(mission_cmd)   # pub cmd
-  
-  if bag_start:
-    bag_ground_cmd.write('/iusl_bag/ground_mission_cmd', mission_cmd)
+        ground_mission_cmd = data[0]
+        ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd
+        if bag_start:
+          bag_ground_cmd.write('/iusl_bag/ground_cmd', ground_mission_cmd)
+        # 更新 ground_mission_start
+        if ground_mission_cmd > 0.5 and ground_mission_cmd < 1.5:
+          ground_mission_start = True
+        else:
+          ground_mission_start = False
+
+  # end receive zigbee data
   rate.sleep()
 
 

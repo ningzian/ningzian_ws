@@ -1,6 +1,16 @@
 #! /usr/bin/env python
 # coding=utf-8
 
+"""
+功能：
+   - 从zigbee节点接收地面站的控制指令
+   - 从估计节点接收估计的目标位置和速度，计算控制指令
+   - 网枪自动发射算法：网枪的准星在检测框内，距离3~6米，
+bag保存：（保存从 ground_mission_start 到 auto_fire 时间段内的bag信息）
+  - 自己的位置和速度
+  - 控制指令
+"""
+
 import rospy
 import rosbag
 import numpy as np
@@ -16,20 +26,13 @@ from dji_osdk_ros.msg import iuslUAVCtrlCmd    # my control cmd
 from std_msgs.msg import UInt8                 # flight state, ground mission cmd
 from sensor_msgs.msg import NavSatFix          # RTK pos
 from std_msgs.msg import Int16                 # rtk yaw
+from std_msgs.msg import Bool                  # 网枪发射指令
 from geometry_msgs.msg import Vector3Stamped   # gimbal state,  UAV RTK velocity
 from dji_osdk_ros.msg import iuslDetectionResult  # detect state for fire
 
 from dji_osdk_ros.srv import SetGoHomeAltitude
 from dji_osdk_ros.srv import SetHomePoint
 from dji_osdk_ros.srv import ObtainControlAuthority
-
-
-# ==========================================================================================
-# ========================= global states ==================================================
-# ==========================================================================================
-
-# need manual setup
-netgun_serial = serial.Serial('/dev/ttyUSB1', 9600, timeout=0.5) 
 
 
 # ===========================================================================================
@@ -50,32 +53,14 @@ def callback_recive_estTarState(msg):  # update est tar state
   est_tar_vy = msg.tar_vy
   return
 
-def callback_recive_groundTarState(msg):   # update ground tar state
-  global ground_tar_x
-  global ground_tar_y
-  global ground_tar_z
-  global ground_tar_vx
-  global ground_tar_vy
-  global ground_tar_OK
-  ground_tar_OK = msg.tar_OK
-  ground_tar_x = msg.tar_x
-  ground_tar_y = msg.tar_y
-  ground_tar_z = msg.tar_z
-  ground_tar_vx = 0.
-  ground_tar_vy = 0.
-  return
-
 def callback_recive_groundMissionCmd(msg):   # update ground mission cmd
   global ground_mission_cmd
+  global ground_mission_start
   ground_mission_cmd = msg.data
-  return
-
-def callback_flight_state(msg):              # update flying flag 
-  global flying
-  if msg.data < 1.6:
-    flying = False
-  elif msg.data > 1.7: 
-    flying = True
+  if ground_mission_cmd > 0.5 and ground_mission_cmd < 1.5:
+    ground_mission_start = True
+  else:
+    ground_mission_start = False
   return
 
 def callback_recive_rtkpos(msg):             # update my UAV pos
@@ -149,60 +134,51 @@ def callback_recive_DetectionResult(msg):      # detect state, for fire
   measure_laser_dis = msg.laser_dis
   return
 
+# ==========================================================================================
+# ========================= global states ==================================================
+# ==========================================================================================
 
-# =================================  init  =====================================================
-# ----------- init -----------------
-rospy.init_node('control', anonymous=True)
-rate = rospy.Rate(50)
+# need manual setup
+Orig_lat = math.radians(30.12997303560482)    # 原点的经纬度和海拔
+Orig_lon = math.radians(120.07509457775448)   # 云栖（待验证）（30.12997303560482、120.07509457775448、16.8）
+Orig_alt = 10.                                # 云谷（需要打点）
 
-# --------------  static param  ---------------
-Orig_lat = math.radians(30.129161866939494) # math.radians(30.12974118425157)   # aliyun gross
-Orig_lon = math.radians(120.07418009681075) # math.radians(120.07765047891777)
-Orig_alt = 0.             # 16.5
+# 静态变量
+netgun_serial = serial.Serial('/dev/ttyUSB1', 9600, timeout=0.5) 
 
-
-# --------------  updated state ---------------
-est_tar_x = 0.         # received estimated target state (pos and vel)
+# 状态更新
+est_tar_OK = False  # 估计的目标位置和速度 (接收自估计节点)
+est_tar_x = 0.         
 est_tar_y = 0.
 est_tar_z = 0.
 est_tar_vx = 0.
 est_tar_vy = 0. 
 
-ground_tar_x = 0.      # zigbee received target pos
-ground_tar_y = 0.
-ground_tar_z = 0.
-ground_tar_vx = 0.
-ground_tar_vy = 0.
-
-my_UAV_x = 0.          # my UAV pos
+my_UAV_x = 0.          # 自己的位置、速度、偏航、云台姿态
 my_UAV_y = 0.
 my_UAV_z = 0.
-my_UAV_home_x = 0.
+my_UAV_vx = 0.        
+my_UAV_vy = 0.
+my_UAV_roll = 0.
+my_UAV_pitch = 0.
+my_UAV_yaw = 0.  
+my_gimbal_roll = 0. 
+my_gimbal_pitch = 0.
+my_gimbal_yaw = 0.    
+
+my_UAV_home_OK = False  # 设置的自己的home位置
+my_UAV_home_x = 0.     
 my_UAV_home_y = 0.
 my_UAV_home_z = 0.
-my_UAV_home_OK = False
 
-my_UAV_vx = 0.         # my UAV vel
-my_UAV_vy = 0.
-
-my_UAV_yaw = 0.        # my UAV yaw
-
-my_gimbal_roll = 0.    # my gimbal angle
-my_gimbal_pitch = 0.
-my_gimbal_yaw = 0.
-
-est_tar_OK = False
-ground_tar_OK = False 
-flying = False         # flying state (false on the ground; true in the air)
-net_fired = False      # if net is fired
 Obtain_control = False # if obtain OSDK control
-
-mission_state = 0      # 0 on the ground, 1 taking off, 2 searching, 3 aimming, 4 manual control, 5 going home
-ground_mission_cmd = 0 # 0 init,          1 takeoff,    2 search,    3 aimming, 4 manual control, 5 fire, 6 gohome
-
 bag_start = False      # if bag is start
+auto_fire_cmd = False      # if net is fired
 
-measure_is_new = False      # detect state for fire
+ground_mission_start = False 
+ground_mission_cmd = 0 # 1 开始，2 暂停， 3返航
+
+measure_is_new = False      # 目标探测==================TODO
 measure_is_in_center =False
 measure_gim_pitch = 0.
 measure_gim_yaw = 0.
@@ -218,11 +194,16 @@ iuslUAVCtrlCmd_data.z = 0.
 iuslUAVCtrlCmd_data.yaw = 0.
 
 
+
+
+# =================================  init  =====================================================
+# ----------- init -----------------
+rospy.init_node('control', anonymous=True)
+rate = rospy.Rate(50)
+
 # --------- sub msg ---------
 rospy.Subscriber('/iusl_ros/estimate_tar_state', iuslTarState, callback_recive_estTarState)           # est tar state
-rospy.Subscriber('/iusl_ros/ground_tar_state', iuslTarState, callback_recive_groundTarState)          # ground tar state
 rospy.Subscriber('/iusl_ros/ground_mission_cmd', UInt8, callback_recive_groundMissionCmd)             # ground mission
-rospy.Subscriber('dji_osdk_ros/flight_status', UInt8, callback_flight_state)                          # flying state
 
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 rospy.Subscriber('dji_osdk_ros/rtk_velocity', Vector3Stamped, callback_recive_rtkvel)         # my rtk vel
@@ -256,11 +237,11 @@ Obtain_control = True
 
 while True:
   # ---------- for rosbag definition (update bag_start) -----------
-  if bag_start and (not flying):
+  if bag_start and auto_fire_cmd:
     bag_ctrlCMD.close()
     bag_mystate.close()
     bag_start = False
-  if (not bag_start) and flying:
+  if (not bag_start) and ground_mission_start:
     bag_ctrlCMD = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'CtrlCMD.bag', 'w')
     bag_mystate = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'mypos.bag', 'w')
     bag_start = True

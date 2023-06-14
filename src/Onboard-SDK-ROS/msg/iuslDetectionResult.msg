@@ -8,17 +8,13 @@ int64 box_width
 int64 box_height
 int64 max_length
 
-# gimbal state
-float64 pitch
-float64 yaw
-float64 roll
-
-# UAV state
-float64 UAV_lat
-float64 UAV_lon
-float64 UAV_alt
-float64 UAV_vx
-float64 UAV_vy
+# camera state
+float64 cam_pitch
+float64 cam_yaw
+float64 cam_roll
+float64 cam_x
+float64 cam_y
+float64 cam_z
 
 # laser state
 float64 laser_dis

@@ -1824,10 +1824,10 @@ void VehicleNode::iuslGimbalCmdCallback(const dji_osdk_ros::iuslGimbalCmd &msg) 
   ptr_wrapper_ -> rotateGimbal(static_cast<PayloadIndex>(0), gimCmd);
 }
 
-void VehicleNode::iuslTOMobileDataCallback(const std_msgs::Int32MultiArray & msg)   // iusl, ningzian, 发送box、估计的距离到PSDK
+void VehicleNode::iuslTOMobileDataCallback(const std_msgs::Int32MultiArray & msg)   // iusl, ningzian, 数据透传到PSDK：box、估计的距离
 {
   if(msg.data.size() == 0) return;
-  if(msg.data.size() == 2) // 估计的距离信息
+  if(msg.data.size() == 2) // 数据透传，估计的距离信息
   {
      uint8_t data[4];
      

@@ -119,7 +119,6 @@ add_message_files(
   iuslTarState.msg            # iusl, ningzian, estimated target state(pos vel)
   iuslMyState.msg
   iuslUAVCtrlCmd.msg          # iusl, ningzian, UAV control command
-  iuslAutoFireCmd.msg         # iusl, ningzian, auto fire command, calculated by control node
 )
 
 ## Generate services in the 'srv' folder
