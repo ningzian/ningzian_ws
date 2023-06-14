@@ -7,32 +7,33 @@ import struct
 
 
 class iuslDetectionResult(genpy.Message):
-  _md5sum = "8e3ffe678e32878975c83b6d54d3b961"
+  _md5sum = "dae7cd9d9df656963a2f88cef4458177"
   _type = "dji_osdk_ros/iuslDetectionResult"
   _has_header = False #flag to mark the presence of a Header object
-  _full_text = """# boundingbox
+  _full_text = """# time
+float64 time
+
+# boundingbox
 int64 center_x
 int64 center_y
+int64 box_width
+int64 box_height
 int64 max_length
 
-# gimbal state
-float64 pitch
-float64 yaw
-float64 roll
-
-# UAV state
-float64 UAV_lat
-float64 UAV_lon
-float64 UAV_alt
-float64 UAV_vx
-float64 UAV_vy
+# camera state
+float64 cam_pitch
+float64 cam_yaw
+float64 cam_roll
+float64 cam_x
+float64 cam_y
+float64 cam_z
 
 # laser state
 float64 laser_dis
 
 """
-  __slots__ = ['center_x','center_y','max_length','pitch','yaw','roll','UAV_lat','UAV_lon','UAV_alt','UAV_vx','UAV_vy','laser_dis']
-  _slot_types = ['int64','int64','int64','float64','float64','float64','float64','float64','float64','float64','float64','float64']
+  __slots__ = ['time','center_x','center_y','box_width','box_height','max_length','cam_pitch','cam_yaw','cam_roll','cam_x','cam_y','cam_z','laser_dis']
+  _slot_types = ['float64','int64','int64','int64','int64','int64','float64','float64','float64','float64','float64','float64','float64']
 
   def __init__(self, *args, **kwds):
     """
@@ -42,7 +43,7 @@ float64 laser_dis
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-       center_x,center_y,max_length,pitch,yaw,roll,UAV_lat,UAV_lon,UAV_alt,UAV_vx,UAV_vy,laser_dis
+       time,center_x,center_y,box_width,box_height,max_length,cam_pitch,cam_yaw,cam_roll,cam_x,cam_y,cam_z,laser_dis
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
@@ -51,42 +52,45 @@ float64 laser_dis
     if args or kwds:
       super(iuslDetectionResult, self).__init__(*args, **kwds)
       #message fields cannot be None, assign default values for those that are
+      if self.time is None:
+        self.time = 0.
       if self.center_x is None:
         self.center_x = 0
       if self.center_y is None:
         self.center_y = 0
+      if self.box_width is None:
+        self.box_width = 0
+      if self.box_height is None:
+        self.box_height = 0
       if self.max_length is None:
         self.max_length = 0
-      if self.pitch is None:
-        self.pitch = 0.
-      if self.yaw is None:
-        self.yaw = 0.
-      if self.roll is None:
-        self.roll = 0.
-      if self.UAV_lat is None:
-        self.UAV_lat = 0.
-      if self.UAV_lon is None:
-        self.UAV_lon = 0.
-      if self.UAV_alt is None:
-        self.UAV_alt = 0.
-      if self.UAV_vx is None:
-        self.UAV_vx = 0.
-      if self.UAV_vy is None:
-        self.UAV_vy = 0.
+      if self.cam_pitch is None:
+        self.cam_pitch = 0.
+      if self.cam_yaw is None:
+        self.cam_yaw = 0.
+      if self.cam_roll is None:
+        self.cam_roll = 0.
+      if self.cam_x is None:
+        self.cam_x = 0.
+      if self.cam_y is None:
+        self.cam_y = 0.
+      if self.cam_z is None:
+        self.cam_z = 0.
       if self.laser_dis is None:
         self.laser_dis = 0.
     else:
+      self.time = 0.
       self.center_x = 0
       self.center_y = 0
+      self.box_width = 0
+      self.box_height = 0
       self.max_length = 0
-      self.pitch = 0.
-      self.yaw = 0.
-      self.roll = 0.
-      self.UAV_lat = 0.
-      self.UAV_lon = 0.
-      self.UAV_alt = 0.
-      self.UAV_vx = 0.
-      self.UAV_vy = 0.
+      self.cam_pitch = 0.
+      self.cam_yaw = 0.
+      self.cam_roll = 0.
+      self.cam_x = 0.
+      self.cam_y = 0.
+      self.cam_z = 0.
       self.laser_dis = 0.
 
   def _get_types(self):
@@ -102,7 +106,7 @@ float64 laser_dis
     """
     try:
       _x = self
-      buff.write(_get_struct_3q9d().pack(_x.center_x, _x.center_y, _x.max_length, _x.pitch, _x.yaw, _x.roll, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_vx, _x.UAV_vy, _x.laser_dis))
+      buff.write(_get_struct_d5q7d().pack(_x.time, _x.center_x, _x.center_y, _x.box_width, _x.box_height, _x.max_length, _x.cam_pitch, _x.cam_yaw, _x.cam_roll, _x.cam_x, _x.cam_y, _x.cam_z, _x.laser_dis))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -115,8 +119,8 @@ float64 laser_dis
       end = 0
       _x = self
       start = end
-      end += 96
-      (_x.center_x, _x.center_y, _x.max_length, _x.pitch, _x.yaw, _x.roll, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_vx, _x.UAV_vy, _x.laser_dis,) = _get_struct_3q9d().unpack(str[start:end])
+      end += 104
+      (_x.time, _x.center_x, _x.center_y, _x.box_width, _x.box_height, _x.max_length, _x.cam_pitch, _x.cam_yaw, _x.cam_roll, _x.cam_x, _x.cam_y, _x.cam_z, _x.laser_dis,) = _get_struct_d5q7d().unpack(str[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -130,7 +134,7 @@ float64 laser_dis
     """
     try:
       _x = self
-      buff.write(_get_struct_3q9d().pack(_x.center_x, _x.center_y, _x.max_length, _x.pitch, _x.yaw, _x.roll, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_vx, _x.UAV_vy, _x.laser_dis))
+      buff.write(_get_struct_d5q7d().pack(_x.time, _x.center_x, _x.center_y, _x.box_width, _x.box_height, _x.max_length, _x.cam_pitch, _x.cam_yaw, _x.cam_roll, _x.cam_x, _x.cam_y, _x.cam_z, _x.laser_dis))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -144,8 +148,8 @@ float64 laser_dis
       end = 0
       _x = self
       start = end
-      end += 96
-      (_x.center_x, _x.center_y, _x.max_length, _x.pitch, _x.yaw, _x.roll, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_vx, _x.UAV_vy, _x.laser_dis,) = _get_struct_3q9d().unpack(str[start:end])
+      end += 104
+      (_x.time, _x.center_x, _x.center_y, _x.box_width, _x.box_height, _x.max_length, _x.cam_pitch, _x.cam_yaw, _x.cam_roll, _x.cam_x, _x.cam_y, _x.cam_z, _x.laser_dis,) = _get_struct_d5q7d().unpack(str[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -154,9 +158,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_3q9d = None
-def _get_struct_3q9d():
-    global _struct_3q9d
-    if _struct_3q9d is None:
-        _struct_3q9d = struct.Struct("<3q9d")
-    return _struct_3q9d
+_struct_d5q7d = None
+def _get_struct_d5q7d():
+    global _struct_d5q7d
+    if _struct_d5q7d is None:
+        _struct_d5q7d = struct.Struct("<d5q7d")
+    return _struct_d5q7d

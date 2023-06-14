@@ -109,6 +109,7 @@
 (setf (get dji_osdk_ros::iuslTarState :definition-)
       "# estimated target UAV state
 bool tar_OK
+
 float64 tar_x
 float64 tar_y
 float64 tar_z

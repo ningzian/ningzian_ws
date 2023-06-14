@@ -12,6 +12,7 @@ class iuslTarState(genpy.Message):
   _has_header = False #flag to mark the presence of a Header object
   _full_text = """# estimated target UAV state
 bool tar_OK
+
 float64 tar_x
 float64 tar_y
 float64 tar_z

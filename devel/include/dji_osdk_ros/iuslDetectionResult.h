@@ -24,36 +24,41 @@ struct iuslDetectionResult_
   typedef iuslDetectionResult_<ContainerAllocator> Type;
 
   iuslDetectionResult_()
-    : center_x(0)
+    : time(0.0)
+    , center_x(0)
     , center_y(0)
+    , box_width(0)
+    , box_height(0)
     , max_length(0)
-    , pitch(0.0)
-    , yaw(0.0)
-    , roll(0.0)
-    , UAV_lat(0.0)
-    , UAV_lon(0.0)
-    , UAV_alt(0.0)
-    , UAV_vx(0.0)
-    , UAV_vy(0.0)
+    , cam_pitch(0.0)
+    , cam_yaw(0.0)
+    , cam_roll(0.0)
+    , cam_x(0.0)
+    , cam_y(0.0)
+    , cam_z(0.0)
     , laser_dis(0.0)  {
     }
   iuslDetectionResult_(const ContainerAllocator& _alloc)
-    : center_x(0)
+    : time(0.0)
+    , center_x(0)
     , center_y(0)
+    , box_width(0)
+    , box_height(0)
     , max_length(0)
-    , pitch(0.0)
-    , yaw(0.0)
-    , roll(0.0)
-    , UAV_lat(0.0)
-    , UAV_lon(0.0)
-    , UAV_alt(0.0)
-    , UAV_vx(0.0)
-    , UAV_vy(0.0)
+    , cam_pitch(0.0)
+    , cam_yaw(0.0)
+    , cam_roll(0.0)
+    , cam_x(0.0)
+    , cam_y(0.0)
+    , cam_z(0.0)
     , laser_dis(0.0)  {
   (void)_alloc;
     }
 
 
+
+   typedef double _time_type;
+  _time_type time;
 
    typedef int64_t _center_x_type;
   _center_x_type center_x;
@@ -61,32 +66,32 @@ struct iuslDetectionResult_
    typedef int64_t _center_y_type;
   _center_y_type center_y;
 
+   typedef int64_t _box_width_type;
+  _box_width_type box_width;
+
+   typedef int64_t _box_height_type;
+  _box_height_type box_height;
+
    typedef int64_t _max_length_type;
   _max_length_type max_length;
 
-   typedef double _pitch_type;
-  _pitch_type pitch;
+   typedef double _cam_pitch_type;
+  _cam_pitch_type cam_pitch;
 
-   typedef double _yaw_type;
-  _yaw_type yaw;
+   typedef double _cam_yaw_type;
+  _cam_yaw_type cam_yaw;
 
-   typedef double _roll_type;
-  _roll_type roll;
+   typedef double _cam_roll_type;
+  _cam_roll_type cam_roll;
 
-   typedef double _UAV_lat_type;
-  _UAV_lat_type UAV_lat;
+   typedef double _cam_x_type;
+  _cam_x_type cam_x;
 
-   typedef double _UAV_lon_type;
-  _UAV_lon_type UAV_lon;
+   typedef double _cam_y_type;
+  _cam_y_type cam_y;
 
-   typedef double _UAV_alt_type;
-  _UAV_alt_type UAV_alt;
-
-   typedef double _UAV_vx_type;
-  _UAV_vx_type UAV_vx;
-
-   typedef double _UAV_vy_type;
-  _UAV_vy_type UAV_vy;
+   typedef double _cam_z_type;
+  _cam_z_type cam_z;
 
    typedef double _laser_dis_type;
   _laser_dis_type laser_dis;
@@ -169,12 +174,12 @@ struct MD5Sum< ::dji_osdk_ros::iuslDetectionResult_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "8e3ffe678e32878975c83b6d54d3b961";
+    return "dae7cd9d9df656963a2f88cef4458177";
   }
 
   static const char* value(const ::dji_osdk_ros::iuslDetectionResult_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0x8e3ffe678e328789ULL;
-  static const uint64_t static_value2 = 0x75c83b6d54d3b961ULL;
+  static const uint64_t static_value1 = 0xdae7cd9d9df65696ULL;
+  static const uint64_t static_value2 = 0x3a2f88cef4458177ULL;
 };
 
 template<class ContainerAllocator>
@@ -193,22 +198,23 @@ struct Definition< ::dji_osdk_ros::iuslDetectionResult_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "# boundingbox\n\
+    return "# time\n\
+float64 time\n\
+\n\
+# boundingbox\n\
 int64 center_x\n\
 int64 center_y\n\
+int64 box_width\n\
+int64 box_height\n\
 int64 max_length\n\
 \n\
-# gimbal state\n\
-float64 pitch\n\
-float64 yaw\n\
-float64 roll\n\
-\n\
-# UAV state\n\
-float64 UAV_lat\n\
-float64 UAV_lon\n\
-float64 UAV_alt\n\
-float64 UAV_vx\n\
-float64 UAV_vy\n\
+# camera state\n\
+float64 cam_pitch\n\
+float64 cam_yaw\n\
+float64 cam_roll\n\
+float64 cam_x\n\
+float64 cam_y\n\
+float64 cam_z\n\
 \n\
 # laser state\n\
 float64 laser_dis\n\
@@ -231,17 +237,18 @@ namespace serialization
   {
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
+      stream.next(m.time);
       stream.next(m.center_x);
       stream.next(m.center_y);
+      stream.next(m.box_width);
+      stream.next(m.box_height);
       stream.next(m.max_length);
-      stream.next(m.pitch);
-      stream.next(m.yaw);
-      stream.next(m.roll);
-      stream.next(m.UAV_lat);
-      stream.next(m.UAV_lon);
-      stream.next(m.UAV_alt);
-      stream.next(m.UAV_vx);
-      stream.next(m.UAV_vy);
+      stream.next(m.cam_pitch);
+      stream.next(m.cam_yaw);
+      stream.next(m.cam_roll);
+      stream.next(m.cam_x);
+      stream.next(m.cam_y);
+      stream.next(m.cam_z);
       stream.next(m.laser_dis);
     }
 
@@ -261,28 +268,30 @@ struct Printer< ::dji_osdk_ros::iuslDetectionResult_<ContainerAllocator> >
 {
   template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::dji_osdk_ros::iuslDetectionResult_<ContainerAllocator>& v)
   {
+    s << indent << "time: ";
+    Printer<double>::stream(s, indent + "  ", v.time);
     s << indent << "center_x: ";
     Printer<int64_t>::stream(s, indent + "  ", v.center_x);
     s << indent << "center_y: ";
     Printer<int64_t>::stream(s, indent + "  ", v.center_y);
+    s << indent << "box_width: ";
+    Printer<int64_t>::stream(s, indent + "  ", v.box_width);
+    s << indent << "box_height: ";
+    Printer<int64_t>::stream(s, indent + "  ", v.box_height);
     s << indent << "max_length: ";
     Printer<int64_t>::stream(s, indent + "  ", v.max_length);
-    s << indent << "pitch: ";
-    Printer<double>::stream(s, indent + "  ", v.pitch);
-    s << indent << "yaw: ";
-    Printer<double>::stream(s, indent + "  ", v.yaw);
-    s << indent << "roll: ";
-    Printer<double>::stream(s, indent + "  ", v.roll);
-    s << indent << "UAV_lat: ";
-    Printer<double>::stream(s, indent + "  ", v.UAV_lat);
-    s << indent << "UAV_lon: ";
-    Printer<double>::stream(s, indent + "  ", v.UAV_lon);
-    s << indent << "UAV_alt: ";
-    Printer<double>::stream(s, indent + "  ", v.UAV_alt);
-    s << indent << "UAV_vx: ";
-    Printer<double>::stream(s, indent + "  ", v.UAV_vx);
-    s << indent << "UAV_vy: ";
-    Printer<double>::stream(s, indent + "  ", v.UAV_vy);
+    s << indent << "cam_pitch: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_pitch);
+    s << indent << "cam_yaw: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_yaw);
+    s << indent << "cam_roll: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_roll);
+    s << indent << "cam_x: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_x);
+    s << indent << "cam_y: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_y);
+    s << indent << "cam_z: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_z);
     s << indent << "laser_dis: ";
     Printer<double>::stream(s, indent + "  ", v.laser_dis);
   }

@@ -165,6 +165,7 @@ struct Definition< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
   {
     return "# estimated target UAV state\n\
 bool tar_OK\n\
+\n\
 float64 tar_x\n\
 float64 tar_y\n\
 float64 tar_z\n\

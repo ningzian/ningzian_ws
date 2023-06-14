@@ -194,10 +194,10 @@
   "a8205a9aaa333548ad9f16f1f7e2853f")
 (cl:defmethod roslisp-msg-protocol:message-definition ((type (cl:eql '<iuslTarState>)))
   "Returns full string definition for message of type '<iuslTarState>"
-  (cl:format cl:nil "# estimated target UAV state~%bool tar_OK~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%~%~%"))
+  (cl:format cl:nil "# estimated target UAV state~%bool tar_OK~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%~%~%"))
 (cl:defmethod roslisp-msg-protocol:message-definition ((type (cl:eql 'iuslTarState)))
   "Returns full string definition for message of type 'iuslTarState"
-  (cl:format cl:nil "# estimated target UAV state~%bool tar_OK~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%~%~%"))
+  (cl:format cl:nil "# estimated target UAV state~%bool tar_OK~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%~%~%"))
 (cl:defmethod roslisp-msg-protocol:serialization-length ((msg <iuslTarState>))
   (cl:+ 0
      1
