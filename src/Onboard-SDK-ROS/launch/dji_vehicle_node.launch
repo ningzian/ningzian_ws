@@ -29,9 +29,10 @@
 
     <node pkg="dji_osdk_ros" type="control.py" name="control" output="screen">
     </node>
-    --> 
+    
     <node pkg="dji_osdk_ros" type="iusl_img_manage" name="iusl_img_manage" output="screen">
     </node>
+    --> 
 
 
 

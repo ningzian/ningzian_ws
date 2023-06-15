@@ -15,10 +15,10 @@
 #include <time.h>
 #include <iostream>
 
-#include <Eigen/Dense>     // eigen， 用于四元数到欧拉角的转换
-#include <Eigen/Geometry>
-#include <Eigen/StdVector>
-#include <Eigen/Core>
+#include <eigen3/Eigen/Dense>     // eigen， 用于四元数到欧拉角的转换
+#include <eigen3/Eigen/Geometry>
+#include <eigen3/Eigen/StdVector>
+#include <eigen3/Eigen/Core>
 #include <math.h>
 
 // msg
@@ -29,7 +29,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <std_msgs/UInt8.h>                  // RTK state, flight state
 #include <std_msgs/UInt16.h> 
-#include <std_msgs/Float64>
+//#include <std_msgs/Float64.h>
 #include <dji_osdk_ros/MobileData.h>         // mobile data
 #include <dji_osdk_ros/iuslGimbalCmd.h>      // gimbal control
 #include <std_msgs/Int32MultiArray.h>        // mobile box

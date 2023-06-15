@@ -16,9 +16,9 @@ std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet
 std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj_best.weights";
 int gim_max_speed = 8;
 float gim_control_k = 0.015;
-float64 Orig_lat = 30.12997303560482 * PI / 180     // 原点的经纬度和海拔
-float64 Orig_lon = 120.07509457775448 * PI / 180    // 云栖（待验证）（30.12997303560482、120.07509457775448、16.8）
-float Orig_alt = 10                                 // 云谷（需要打点）
+double Orig_lat = 30.12997303560482 * PI / 180;     // 原点的经纬度和海拔
+double Orig_lon = 120.07509457775448 * PI / 180;    // 云栖（待验证）（30.12997303560482、120.07509457775448、16.8）
+float Orig_alt = 10;                                 // 云谷（需要打点）
 
 // global param
 Detector detector(cfg_file, weight_file, 0);     // darknet detector
@@ -34,8 +34,8 @@ bool box_ok = false;              // 当前是否检测到
 dji_osdk_ros::iuslDetectionResult detect_result;        // 检测结果
 
 
-float UAV_lat_now = 0;
-float UAV_lon_now = 0;
+double UAV_lat_now = 0;
+double UAV_lon_now = 0;
 float UAV_alt_now = 0;
 float UAV_roll_now = 0;
 float UAV_pitch_now = 0;
@@ -166,54 +166,56 @@ void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg)
   float qz = msg.quaternion.z;
   float qw = msg.quaternion.w;
   Eigen::Quaterniond q;
-    q.x() = x;
-    q.y() = y;
-    q.z() = z;
-    q.w() = w;
+    q.x() = qx;
+    q.y() = qy;
+    q.z() = qz;
+    q.w() = qw;
   Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
-  UAV_roll_now = euler[0];  
-  UAV_pitch_now = euler[1];
+  UAV_roll_now = euler(2);  
+  UAV_pitch_now = - euler(1);
+
   // 计算无人机的全局位置  TODO! need test!
-  Ec = 6378137 * (1 - 21412/6356725. * std::pow(std::sin(UAV_lat), 2) ) + UAV_alt_now;
-  Ed = Ec * std::cos(UAV_lat);
-  d_lat = UAV_lat_now - Orig_lat;
-  d_lon = UAV_lon_now - Orig_lon;
+  double Ec = 6378137 * (1 - 21412/6356725 * std::pow(std::sin(UAV_lat_now), 2) ) + UAV_alt_now;
+  double Ed = Ec * std::cos(UAV_lat_now);
+  double d_lat = UAV_lat_now - Orig_lat;
+  double d_lon = UAV_lon_now - Orig_lon;
   float UAV_x = d_lat * Ec;
   float UAV_y = d_lon * Ed;
   float UAV_z = Orig_alt - UAV_alt_now;
   // 计算相机的全局位置 TODO! need test!
   Eigen::Vector3d d_pos; 
-  d_pos[0, 0] = 0.45;
-  d_pos[0, 1] = -0.3;
-  d_pos[0, 2] = 0.25;
+  d_pos(0) = 0.45;
+  d_pos(1) = -0.3;
+  d_pos(2) = 0.25;
 
-  Eigen::MatrixXd::Zero(3, 3) rz; 
-  rz[0, 0] = std::cos(UAV_yaw_now);
-  rz[0, 1] = -std::sin(UAV_yaw_now);
-  rz[1, 0] = std::cos(UAV_yaw_now);
-  rz[1, 1] = std::sin(UAV_yaw_now);
-  rz[2, 2] = 1;
+  Eigen::MatrixXd rz = Eigen::MatrixXd::Zero(3, 3); 
+  rz(0, 0) = std::cos(UAV_yaw_now);
+  rz(0, 1) = -std::sin(UAV_yaw_now);
+  rz(1, 0) = std::cos(UAV_yaw_now);
+  rz(1, 1) = std::sin(UAV_yaw_now);
+  rz(2, 2) = 1;
 
-  Eigen::MatrixXd::Zero(3, 3) ry; 
-  ry[0, 0] = std::cos(UAV_pitch_now);
-  ry[0, 2] = std::sin(UAV_pitch_now);
-  ry[1, 1] = 1;
-  ry[2, 0] = -std::sin(UAV_pitch_now);
-  ry[2, 2] = std::cos(UAV_pitch_now);
+  Eigen::MatrixXd ry = Eigen::MatrixXd::Zero(3, 3);  
+  ry(0, 0) = std::cos(UAV_pitch_now);
+  ry(0, 2) = std::sin(UAV_pitch_now);
+  ry(1, 1) = 1;
+  ry(2, 0) = -std::sin(UAV_pitch_now);
+  ry(2, 2) = std::cos(UAV_pitch_now);
 
-  Eigen::MatrixXd::Zero(3, 3) rx; 
-  rx[0, 0] = 1;
-  rx[1, 1] = std::cos(UAV_roll_now);
-  rx[1, 2] = -std::sin(UAV_roll_now);
-  rx[2, 1] = std::sin(UAV_roll_now);
-  rx[2, 2] = std::cos(UAV_roll_now);
+  Eigen::MatrixXd rx = Eigen::MatrixXd::Zero(3, 3);  
+  rx(0, 0) = 1;
+  rx(1, 1) = std::cos(UAV_roll_now);
+  rx(1, 2) = -std::sin(UAV_roll_now);
+  rx(2, 1) = std::sin(UAV_roll_now);
+  rx(2, 2) = std::cos(UAV_roll_now);
   
   Eigen::Vector3d d_pos_now;
   d_pos_now = rz * ry * rx * d_pos;
 
-  cam_x_now = UAV_x + d_pos_now[0, 0];
-  cam_y_now = UAV_y + d_pos_now[0, 1];
-  cam_z_now = UAV_z + d_pos_now[0, 2];
+  cam_x_now = UAV_x + d_pos_now(0);
+  cam_y_now = UAV_y + d_pos_now(1);
+  cam_z_now = UAV_z + d_pos_now(2);
+
 
 }
 
@@ -296,10 +298,10 @@ int main(int argc, char **argv)
         DetectionResultPublisher.publish(detect_result);     // 发送 ros_msg 目标检测结果
         // pub mobile box  发送给PSDK的数据
         std_msgs::Int32MultiArray mobile_box;
-        int x_min = box.x;
-        int x_max = box.x + box.width;
-        int y_min = box.y;
-        int y_max = box.y + box.height;
+        int x_min = box.x*1920/1536;
+        int x_max = (box.x + box.width)*1920/1536;
+        int y_min = box.y*1080/864;
+        int y_max = (box.y + box.height)*1080/864;
         mobile_box.data.push_back(x_min);
 	      mobile_box.data.push_back(y_min);
 	      mobile_box.data.push_back(x_max);
@@ -310,14 +312,19 @@ int main(int argc, char **argv)
       //cv::waitKey(10);
     }
     /* ---  spin --- */
+    /*
+    ROS_INFO("UAV_roll =%.2f", UAV_roll_now);
+    ROS_INFO("UAV_pitch =%.2f", UAV_pitch_now);
+    ROS_INFO("UAV_yaw =%.2f", UAV_yaw_now);
+    ROS_INFO("cam_x =%.2f", cam_x_now);
+    ROS_INFO("cam_y =%.2f", cam_y_now);
+    ROS_INFO("cam_z =%.2f", cam_z_now);
+    ROS_INFO("laser_dis = %.2f",laser_dis_now);*/
     ros::spinOnce();
     rate.sleep();
   } 
   //cv::destroyWindow("view");
   return 0;
 }
-
-
-
 
 
