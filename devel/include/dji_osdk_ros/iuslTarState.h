@@ -25,19 +25,23 @@ struct iuslTarState_
 
   iuslTarState_()
     : tar_OK(false)
+    , is_laser_measured(false)
     , tar_x(0.0)
     , tar_y(0.0)
     , tar_z(0.0)
     , tar_vx(0.0)
-    , tar_vy(0.0)  {
+    , tar_vy(0.0)
+    , est_dis(0.0)  {
     }
   iuslTarState_(const ContainerAllocator& _alloc)
     : tar_OK(false)
+    , is_laser_measured(false)
     , tar_x(0.0)
     , tar_y(0.0)
     , tar_z(0.0)
     , tar_vx(0.0)
-    , tar_vy(0.0)  {
+    , tar_vy(0.0)
+    , est_dis(0.0)  {
   (void)_alloc;
     }
 
@@ -45,6 +49,9 @@ struct iuslTarState_
 
    typedef uint8_t _tar_OK_type;
   _tar_OK_type tar_OK;
+
+   typedef uint8_t _is_laser_measured_type;
+  _is_laser_measured_type is_laser_measured;
 
    typedef double _tar_x_type;
   _tar_x_type tar_x;
@@ -60,6 +67,9 @@ struct iuslTarState_
 
    typedef double _tar_vy_type;
   _tar_vy_type tar_vy;
+
+   typedef double _est_dis_type;
+  _est_dis_type est_dis;
 
 
 
@@ -139,12 +149,12 @@ struct MD5Sum< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "a8205a9aaa333548ad9f16f1f7e2853f";
+    return "fa6098269c9336e18e8e70250407c05a";
   }
 
   static const char* value(const ::dji_osdk_ros::iuslTarState_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0xa8205a9aaa333548ULL;
-  static const uint64_t static_value2 = 0xad9f16f1f7e2853fULL;
+  static const uint64_t static_value1 = 0xfa6098269c9336e1ULL;
+  static const uint64_t static_value2 = 0x8e8e70250407c05aULL;
 };
 
 template<class ContainerAllocator>
@@ -165,12 +175,15 @@ struct Definition< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
   {
     return "# estimated target UAV state\n\
 bool tar_OK\n\
+bool is_laser_measured\n\
 \n\
 float64 tar_x\n\
 float64 tar_y\n\
 float64 tar_z\n\
 float64 tar_vx\n\
 float64 tar_vy\n\
+\n\
+float64 est_dis\n\
 \n\
 ";
   }
@@ -191,11 +204,13 @@ namespace serialization
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
       stream.next(m.tar_OK);
+      stream.next(m.is_laser_measured);
       stream.next(m.tar_x);
       stream.next(m.tar_y);
       stream.next(m.tar_z);
       stream.next(m.tar_vx);
       stream.next(m.tar_vy);
+      stream.next(m.est_dis);
     }
 
     ROS_DECLARE_ALLINONE_SERIALIZER
@@ -216,6 +231,8 @@ struct Printer< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
   {
     s << indent << "tar_OK: ";
     Printer<uint8_t>::stream(s, indent + "  ", v.tar_OK);
+    s << indent << "is_laser_measured: ";
+    Printer<uint8_t>::stream(s, indent + "  ", v.is_laser_measured);
     s << indent << "tar_x: ";
     Printer<double>::stream(s, indent + "  ", v.tar_x);
     s << indent << "tar_y: ";
@@ -226,6 +243,8 @@ struct Printer< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
     Printer<double>::stream(s, indent + "  ", v.tar_vx);
     s << indent << "tar_vy: ";
     Printer<double>::stream(s, indent + "  ", v.tar_vy);
+    s << indent << "est_dis: ";
+    Printer<double>::stream(s, indent + "  ", v.est_dis);
   }
 };
 

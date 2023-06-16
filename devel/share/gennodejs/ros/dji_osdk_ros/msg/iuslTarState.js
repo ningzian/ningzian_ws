@@ -19,11 +19,13 @@ class iuslTarState {
     if (initObj === null) {
       // initObj === null is a special case for deserialization where we don't initialize fields
       this.tar_OK = null;
+      this.is_laser_measured = null;
       this.tar_x = null;
       this.tar_y = null;
       this.tar_z = null;
       this.tar_vx = null;
       this.tar_vy = null;
+      this.est_dis = null;
     }
     else {
       if (initObj.hasOwnProperty('tar_OK')) {
@@ -31,6 +33,12 @@ class iuslTarState {
       }
       else {
         this.tar_OK = false;
+      }
+      if (initObj.hasOwnProperty('is_laser_measured')) {
+        this.is_laser_measured = initObj.is_laser_measured
+      }
+      else {
+        this.is_laser_measured = false;
       }
       if (initObj.hasOwnProperty('tar_x')) {
         this.tar_x = initObj.tar_x
@@ -62,6 +70,12 @@ class iuslTarState {
       else {
         this.tar_vy = 0.0;
       }
+      if (initObj.hasOwnProperty('est_dis')) {
+        this.est_dis = initObj.est_dis
+      }
+      else {
+        this.est_dis = 0.0;
+      }
     }
   }
 
@@ -69,6 +83,8 @@ class iuslTarState {
     // Serializes a message object of type iuslTarState
     // Serialize message field [tar_OK]
     bufferOffset = _serializer.bool(obj.tar_OK, buffer, bufferOffset);
+    // Serialize message field [is_laser_measured]
+    bufferOffset = _serializer.bool(obj.is_laser_measured, buffer, bufferOffset);
     // Serialize message field [tar_x]
     bufferOffset = _serializer.float64(obj.tar_x, buffer, bufferOffset);
     // Serialize message field [tar_y]
@@ -79,6 +95,8 @@ class iuslTarState {
     bufferOffset = _serializer.float64(obj.tar_vx, buffer, bufferOffset);
     // Serialize message field [tar_vy]
     bufferOffset = _serializer.float64(obj.tar_vy, buffer, bufferOffset);
+    // Serialize message field [est_dis]
+    bufferOffset = _serializer.float64(obj.est_dis, buffer, bufferOffset);
     return bufferOffset;
   }
 
@@ -88,6 +106,8 @@ class iuslTarState {
     let data = new iuslTarState(null);
     // Deserialize message field [tar_OK]
     data.tar_OK = _deserializer.bool(buffer, bufferOffset);
+    // Deserialize message field [is_laser_measured]
+    data.is_laser_measured = _deserializer.bool(buffer, bufferOffset);
     // Deserialize message field [tar_x]
     data.tar_x = _deserializer.float64(buffer, bufferOffset);
     // Deserialize message field [tar_y]
@@ -98,11 +118,13 @@ class iuslTarState {
     data.tar_vx = _deserializer.float64(buffer, bufferOffset);
     // Deserialize message field [tar_vy]
     data.tar_vy = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [est_dis]
+    data.est_dis = _deserializer.float64(buffer, bufferOffset);
     return data;
   }
 
   static getMessageSize(object) {
-    return 41;
+    return 50;
   }
 
   static datatype() {
@@ -112,7 +134,7 @@ class iuslTarState {
 
   static md5sum() {
     //Returns md5sum for a message object
-    return 'a8205a9aaa333548ad9f16f1f7e2853f';
+    return 'fa6098269c9336e18e8e70250407c05a';
   }
 
   static messageDefinition() {
@@ -120,12 +142,15 @@ class iuslTarState {
     return `
     # estimated target UAV state
     bool tar_OK
+    bool is_laser_measured
     
     float64 tar_x
     float64 tar_y
     float64 tar_z
     float64 tar_vx
     float64 tar_vy
+    
+    float64 est_dis
     
     
     `;
@@ -142,6 +167,13 @@ class iuslTarState {
     }
     else {
       resolved.tar_OK = false
+    }
+
+    if (msg.is_laser_measured !== undefined) {
+      resolved.is_laser_measured = msg.is_laser_measured;
+    }
+    else {
+      resolved.is_laser_measured = false
     }
 
     if (msg.tar_x !== undefined) {
@@ -177,6 +209,13 @@ class iuslTarState {
     }
     else {
       resolved.tar_vy = 0.0
+    }
+
+    if (msg.est_dis !== undefined) {
+      resolved.est_dis = msg.est_dis;
+    }
+    else {
+      resolved.est_dis = 0.0
     }
 
     return resolved;

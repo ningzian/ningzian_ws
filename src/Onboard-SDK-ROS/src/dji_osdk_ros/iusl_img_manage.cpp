@@ -15,7 +15,7 @@ std::string data_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darkne
 std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj.cfg";
 std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj_best.weights";
 int gim_max_speed = 8;
-float gim_control_k = 0.015;
+float gim_control_k = 0.02;   // 0.015
 
 // global param
 Detector detector(cfg_file, weight_file, 0);     // darknet detector
@@ -104,10 +104,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     detect_result.UAV_roll = UAV_roll_now;    // 无人机姿态
     detect_result.UAV_pitch = UAV_pitch_now;
     detect_result.UAV_yaw = UAV_yaw_now;
-    detect_result.cam_roll = cam_pitch_now;   // 相机机姿态
-    detect_result.cam_pitch = cam_yaw_now;
-    detect_result.cam_yaw = cam_roll_now;
-    detect_result.laser_dis = laser_dis_now;  // 激光测距
+    detect_result.cam_roll = cam_roll_now;     // 相机机姿态
+    detect_result.cam_pitch = cam_pitch_now;
+    detect_result.cam_yaw = cam_yaw_now;
+    detect_result.laser_dis = laser_dis_now;              // 激光测距
     /*if (flight_state > 1.5)
     {
       // put text 
@@ -131,14 +131,14 @@ void rtkPosCallback(const sensor_msgs::NavSatFix& msg)  //rtk pos
 
 void callback_recive_rtkYaw(const std_msgs::UInt16& msg)
 {
-  UAV_yaw_now = (msg.data + 90) * PI / 180;
+  UAV_yaw_now = msg.data + 90;
 }
 
 void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg)
 {
-  gim_pitch_now = msg.vector.x;
-  gim_yaw_now = msg.vector.z;
-  gim_roll_now = msg.vector.y;
+  cam_pitch_now = msg.vector.x;   // pitch
+  cam_yaw_now = msg.vector.z;     // yaw
+  cam_roll_now = msg.vector.y;    // roll
 }
 
 void mobileCallback(const dji_osdk_ros::MobileData & msg)    // 接收PSDK的激光测距数据
@@ -165,8 +165,8 @@ void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg)
     q.z() = qz;
     q.w() = qw;
   Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
-  UAV_roll_now = euler(2);  
-  UAV_pitch_now = - euler(1);
+  UAV_roll_now = euler(2) * 180 / PI;  
+  UAV_pitch_now = - euler(1) * 180 / PI;
 
 }
 
@@ -241,8 +241,8 @@ int main(int argc, char **argv)
         else if (gim_speed_q < -gim_max_speed) {gim_speed_q = -gim_max_speed;}
         if (gim_speed_r > gim_max_speed) {gim_speed_r = gim_max_speed;}
         else if (gim_speed_r < -gim_max_speed) {gim_speed_r = -gim_max_speed;}
-        GimCmd_data.pitch = gim_speed_q + gim_pitch_now;
-        GimCmd_data.yaw = gim_speed_r + gim_yaw_now;
+        GimCmd_data.pitch = gim_speed_q + cam_pitch_now;
+        GimCmd_data.yaw = gim_speed_r + cam_yaw_now;
         GimCmd_data.roll = 0;   
         GimCmdPublisher.publish(GimCmd_data);    // 发送 ros_msg 云台控制指令
         //  pub detect result

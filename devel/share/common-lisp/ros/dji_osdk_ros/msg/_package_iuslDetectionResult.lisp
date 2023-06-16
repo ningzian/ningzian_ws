@@ -11,18 +11,24 @@
           BOX_HEIGHT
           MAX_LENGTH-VAL
           MAX_LENGTH
+          UAV_LAT-VAL
+          UAV_LAT
+          UAV_LON-VAL
+          UAV_LON
+          UAV_ALT-VAL
+          UAV_ALT
+          UAV_ROLL-VAL
+          UAV_ROLL
+          UAV_PITCH-VAL
+          UAV_PITCH
+          UAV_YAW-VAL
+          UAV_YAW
+          CAM_ROLL-VAL
+          CAM_ROLL
           CAM_PITCH-VAL
           CAM_PITCH
           CAM_YAW-VAL
           CAM_YAW
-          CAM_ROLL-VAL
-          CAM_ROLL
-          CAM_X-VAL
-          CAM_X
-          CAM_Y-VAL
-          CAM_Y
-          CAM_Z-VAL
-          CAM_Z
           LASER_DIS-VAL
           LASER_DIS
 ))

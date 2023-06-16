@@ -14,29 +14,36 @@
 
 (defclass dji_osdk_ros::iuslTarState
   :super ros::object
-  :slots (_tar_OK _tar_x _tar_y _tar_z _tar_vx _tar_vy ))
+  :slots (_tar_OK _is_laser_measured _tar_x _tar_y _tar_z _tar_vx _tar_vy _est_dis ))
 
 (defmethod dji_osdk_ros::iuslTarState
   (:init
    (&key
     ((:tar_OK __tar_OK) nil)
+    ((:is_laser_measured __is_laser_measured) nil)
     ((:tar_x __tar_x) 0.0)
     ((:tar_y __tar_y) 0.0)
     ((:tar_z __tar_z) 0.0)
     ((:tar_vx __tar_vx) 0.0)
     ((:tar_vy __tar_vy) 0.0)
+    ((:est_dis __est_dis) 0.0)
     )
    (send-super :init)
    (setq _tar_OK __tar_OK)
+   (setq _is_laser_measured __is_laser_measured)
    (setq _tar_x (float __tar_x))
    (setq _tar_y (float __tar_y))
    (setq _tar_z (float __tar_z))
    (setq _tar_vx (float __tar_vx))
    (setq _tar_vy (float __tar_vy))
+   (setq _est_dis (float __est_dis))
    self)
   (:tar_OK
    (&optional __tar_OK)
    (if __tar_OK (setq _tar_OK __tar_OK)) _tar_OK)
+  (:is_laser_measured
+   (&optional __is_laser_measured)
+   (if __is_laser_measured (setq _is_laser_measured __is_laser_measured)) _is_laser_measured)
   (:tar_x
    (&optional __tar_x)
    (if __tar_x (setq _tar_x __tar_x)) _tar_x)
@@ -52,10 +59,15 @@
   (:tar_vy
    (&optional __tar_vy)
    (if __tar_vy (setq _tar_vy __tar_vy)) _tar_vy)
+  (:est_dis
+   (&optional __est_dis)
+   (if __est_dis (setq _est_dis __est_dis)) _est_dis)
   (:serialization-length
    ()
    (+
     ;; bool _tar_OK
+    1
+    ;; bool _is_laser_measured
     1
     ;; float64 _tar_x
     8
@@ -67,6 +79,8 @@
     8
     ;; float64 _tar_vy
     8
+    ;; float64 _est_dis
+    8
     ))
   (:serialize
    (&optional strm)
@@ -74,6 +88,8 @@
               (make-string-output-stream (send self :serialization-length)))))
      ;; bool _tar_OK
        (if _tar_OK (write-byte -1 s) (write-byte 0 s))
+     ;; bool _is_laser_measured
+       (if _is_laser_measured (write-byte -1 s) (write-byte 0 s))
      ;; float64 _tar_x
        (sys::poke _tar_x (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _tar_y
@@ -84,12 +100,16 @@
        (sys::poke _tar_vx (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _tar_vy
        (sys::poke _tar_vy (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _est_dis
+       (sys::poke _est_dis (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;;
      (if (null strm) (get-output-stream-string s))))
   (:deserialize
    (buf &optional (ptr- 0))
    ;; bool _tar_OK
      (setq _tar_OK (not (= 0 (sys::peek buf ptr- :char)))) (incf ptr- 1)
+   ;; bool _is_laser_measured
+     (setq _is_laser_measured (not (= 0 (sys::peek buf ptr- :char)))) (incf ptr- 1)
    ;; float64 _tar_x
      (setq _tar_x (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _tar_y
@@ -100,15 +120,18 @@
      (setq _tar_vx (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _tar_vy
      (setq _tar_vy (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _est_dis
+     (setq _est_dis (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;;
    self)
   )
 
-(setf (get dji_osdk_ros::iuslTarState :md5sum-) "a8205a9aaa333548ad9f16f1f7e2853f")
+(setf (get dji_osdk_ros::iuslTarState :md5sum-) "fa6098269c9336e18e8e70250407c05a")
 (setf (get dji_osdk_ros::iuslTarState :datatype-) "dji_osdk_ros/iuslTarState")
 (setf (get dji_osdk_ros::iuslTarState :definition-)
       "# estimated target UAV state
 bool tar_OK
+bool is_laser_measured
 
 float64 tar_x
 float64 tar_y
@@ -116,11 +139,13 @@ float64 tar_z
 float64 tar_vx
 float64 tar_vy
 
+float64 est_dis
+
 
 ")
 
 
 
-(provide :dji_osdk_ros/iuslTarState "a8205a9aaa333548ad9f16f1f7e2853f")
+(provide :dji_osdk_ros/iuslTarState "fa6098269c9336e18e8e70250407c05a")
 
 

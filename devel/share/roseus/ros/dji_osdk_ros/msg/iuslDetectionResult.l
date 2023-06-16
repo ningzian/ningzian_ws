@@ -14,7 +14,7 @@
 
 (defclass dji_osdk_ros::iuslDetectionResult
   :super ros::object
-  :slots (_time _center_x _center_y _box_width _box_height _max_length _cam_pitch _cam_yaw _cam_roll _cam_x _cam_y _cam_z _laser_dis ))
+  :slots (_time _center_x _center_y _box_width _box_height _max_length _UAV_lat _UAV_lon _UAV_alt _UAV_roll _UAV_pitch _UAV_yaw _cam_roll _cam_pitch _cam_yaw _laser_dis ))
 
 (defmethod dji_osdk_ros::iuslDetectionResult
   (:init
@@ -25,12 +25,15 @@
     ((:box_width __box_width) 0)
     ((:box_height __box_height) 0)
     ((:max_length __max_length) 0)
+    ((:UAV_lat __UAV_lat) 0.0)
+    ((:UAV_lon __UAV_lon) 0.0)
+    ((:UAV_alt __UAV_alt) 0.0)
+    ((:UAV_roll __UAV_roll) 0.0)
+    ((:UAV_pitch __UAV_pitch) 0.0)
+    ((:UAV_yaw __UAV_yaw) 0.0)
+    ((:cam_roll __cam_roll) 0.0)
     ((:cam_pitch __cam_pitch) 0.0)
     ((:cam_yaw __cam_yaw) 0.0)
-    ((:cam_roll __cam_roll) 0.0)
-    ((:cam_x __cam_x) 0.0)
-    ((:cam_y __cam_y) 0.0)
-    ((:cam_z __cam_z) 0.0)
     ((:laser_dis __laser_dis) 0.0)
     )
    (send-super :init)
@@ -40,12 +43,15 @@
    (setq _box_width (round __box_width))
    (setq _box_height (round __box_height))
    (setq _max_length (round __max_length))
+   (setq _UAV_lat (float __UAV_lat))
+   (setq _UAV_lon (float __UAV_lon))
+   (setq _UAV_alt (float __UAV_alt))
+   (setq _UAV_roll (float __UAV_roll))
+   (setq _UAV_pitch (float __UAV_pitch))
+   (setq _UAV_yaw (float __UAV_yaw))
+   (setq _cam_roll (float __cam_roll))
    (setq _cam_pitch (float __cam_pitch))
    (setq _cam_yaw (float __cam_yaw))
-   (setq _cam_roll (float __cam_roll))
-   (setq _cam_x (float __cam_x))
-   (setq _cam_y (float __cam_y))
-   (setq _cam_z (float __cam_z))
    (setq _laser_dis (float __laser_dis))
    self)
   (:time
@@ -66,24 +72,33 @@
   (:max_length
    (&optional __max_length)
    (if __max_length (setq _max_length __max_length)) _max_length)
+  (:UAV_lat
+   (&optional __UAV_lat)
+   (if __UAV_lat (setq _UAV_lat __UAV_lat)) _UAV_lat)
+  (:UAV_lon
+   (&optional __UAV_lon)
+   (if __UAV_lon (setq _UAV_lon __UAV_lon)) _UAV_lon)
+  (:UAV_alt
+   (&optional __UAV_alt)
+   (if __UAV_alt (setq _UAV_alt __UAV_alt)) _UAV_alt)
+  (:UAV_roll
+   (&optional __UAV_roll)
+   (if __UAV_roll (setq _UAV_roll __UAV_roll)) _UAV_roll)
+  (:UAV_pitch
+   (&optional __UAV_pitch)
+   (if __UAV_pitch (setq _UAV_pitch __UAV_pitch)) _UAV_pitch)
+  (:UAV_yaw
+   (&optional __UAV_yaw)
+   (if __UAV_yaw (setq _UAV_yaw __UAV_yaw)) _UAV_yaw)
+  (:cam_roll
+   (&optional __cam_roll)
+   (if __cam_roll (setq _cam_roll __cam_roll)) _cam_roll)
   (:cam_pitch
    (&optional __cam_pitch)
    (if __cam_pitch (setq _cam_pitch __cam_pitch)) _cam_pitch)
   (:cam_yaw
    (&optional __cam_yaw)
    (if __cam_yaw (setq _cam_yaw __cam_yaw)) _cam_yaw)
-  (:cam_roll
-   (&optional __cam_roll)
-   (if __cam_roll (setq _cam_roll __cam_roll)) _cam_roll)
-  (:cam_x
-   (&optional __cam_x)
-   (if __cam_x (setq _cam_x __cam_x)) _cam_x)
-  (:cam_y
-   (&optional __cam_y)
-   (if __cam_y (setq _cam_y __cam_y)) _cam_y)
-  (:cam_z
-   (&optional __cam_z)
-   (if __cam_z (setq _cam_z __cam_z)) _cam_z)
   (:laser_dis
    (&optional __laser_dis)
    (if __laser_dis (setq _laser_dis __laser_dis)) _laser_dis)
@@ -102,17 +117,23 @@
     8
     ;; int64 _max_length
     8
-    ;; float64 _cam_pitch
+    ;; float64 _UAV_lat
     8
-    ;; float64 _cam_yaw
+    ;; float64 _UAV_lon
+    8
+    ;; float64 _UAV_alt
+    8
+    ;; float64 _UAV_roll
+    8
+    ;; float64 _UAV_pitch
+    8
+    ;; float64 _UAV_yaw
     8
     ;; float64 _cam_roll
     8
-    ;; float64 _cam_x
+    ;; float64 _cam_pitch
     8
-    ;; float64 _cam_y
-    8
-    ;; float64 _cam_z
+    ;; float64 _cam_yaw
     8
     ;; float64 _laser_dis
     8
@@ -183,18 +204,24 @@
               (write-long (if (>= _max_length 0) 0 #xffffffff) s))
              (t                                         ;; integer
               (write-long _max_length s)(write-long (if (>= _max_length 0) 0 #xffffffff) s)))
+     ;; float64 _UAV_lat
+       (sys::poke _UAV_lat (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _UAV_lon
+       (sys::poke _UAV_lon (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _UAV_alt
+       (sys::poke _UAV_alt (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _UAV_roll
+       (sys::poke _UAV_roll (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _UAV_pitch
+       (sys::poke _UAV_pitch (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _UAV_yaw
+       (sys::poke _UAV_yaw (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _cam_roll
+       (sys::poke _cam_roll (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _cam_pitch
        (sys::poke _cam_pitch (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _cam_yaw
        (sys::poke _cam_yaw (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
-     ;; float64 _cam_roll
-       (sys::poke _cam_roll (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
-     ;; float64 _cam_x
-       (sys::poke _cam_x (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
-     ;; float64 _cam_y
-       (sys::poke _cam_y (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
-     ;; float64 _cam_z
-       (sys::poke _cam_z (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _laser_dis
        (sys::poke _laser_dis (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;;
@@ -263,25 +290,31 @@
                       b0)
                     ((= b1  0) (make-instance bignum :size 1 :bv (integer-vector b0)))
                     (t (make-instance bignum :size 2 :bv (integer-vector b0 (ash b1 1)))))))
+   ;; float64 _UAV_lat
+     (setq _UAV_lat (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _UAV_lon
+     (setq _UAV_lon (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _UAV_alt
+     (setq _UAV_alt (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _UAV_roll
+     (setq _UAV_roll (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _UAV_pitch
+     (setq _UAV_pitch (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _UAV_yaw
+     (setq _UAV_yaw (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _cam_roll
+     (setq _cam_roll (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _cam_pitch
      (setq _cam_pitch (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _cam_yaw
      (setq _cam_yaw (sys::peek buf ptr- :double)) (incf ptr- 8)
-   ;; float64 _cam_roll
-     (setq _cam_roll (sys::peek buf ptr- :double)) (incf ptr- 8)
-   ;; float64 _cam_x
-     (setq _cam_x (sys::peek buf ptr- :double)) (incf ptr- 8)
-   ;; float64 _cam_y
-     (setq _cam_y (sys::peek buf ptr- :double)) (incf ptr- 8)
-   ;; float64 _cam_z
-     (setq _cam_z (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _laser_dis
      (setq _laser_dis (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;;
    self)
   )
 
-(setf (get dji_osdk_ros::iuslDetectionResult :md5sum-) "dae7cd9d9df656963a2f88cef4458177")
+(setf (get dji_osdk_ros::iuslDetectionResult :md5sum-) "6a683b81585e7917ba9c237fbbd81b74")
 (setf (get dji_osdk_ros::iuslDetectionResult :datatype-) "dji_osdk_ros/iuslDetectionResult")
 (setf (get dji_osdk_ros::iuslDetectionResult :definition-)
       "# time
@@ -295,12 +328,15 @@ int64 box_height
 int64 max_length
 
 # camera state
+float64 UAV_lat
+float64 UAV_lon
+float64 UAV_alt
+float64 UAV_roll
+float64 UAV_pitch
+float64 UAV_yaw
+float64 cam_roll
 float64 cam_pitch
 float64 cam_yaw
-float64 cam_roll
-float64 cam_x
-float64 cam_y
-float64 cam_z
 
 # laser state
 float64 laser_dis
@@ -310,6 +346,6 @@ float64 laser_dis
 
 
 
-(provide :dji_osdk_ros/iuslDetectionResult "dae7cd9d9df656963a2f88cef4458177")
+(provide :dji_osdk_ros/iuslDetectionResult "6a683b81585e7917ba9c237fbbd81b74")
 
 

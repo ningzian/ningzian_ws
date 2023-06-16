@@ -7,11 +7,12 @@ import struct
 
 
 class iuslTarState(genpy.Message):
-  _md5sum = "a8205a9aaa333548ad9f16f1f7e2853f"
+  _md5sum = "fa6098269c9336e18e8e70250407c05a"
   _type = "dji_osdk_ros/iuslTarState"
   _has_header = False #flag to mark the presence of a Header object
   _full_text = """# estimated target UAV state
 bool tar_OK
+bool is_laser_measured
 
 float64 tar_x
 float64 tar_y
@@ -19,9 +20,11 @@ float64 tar_z
 float64 tar_vx
 float64 tar_vy
 
+float64 est_dis
+
 """
-  __slots__ = ['tar_OK','tar_x','tar_y','tar_z','tar_vx','tar_vy']
-  _slot_types = ['bool','float64','float64','float64','float64','float64']
+  __slots__ = ['tar_OK','is_laser_measured','tar_x','tar_y','tar_z','tar_vx','tar_vy','est_dis']
+  _slot_types = ['bool','bool','float64','float64','float64','float64','float64','float64']
 
   def __init__(self, *args, **kwds):
     """
@@ -31,7 +34,7 @@ float64 tar_vy
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-       tar_OK,tar_x,tar_y,tar_z,tar_vx,tar_vy
+       tar_OK,is_laser_measured,tar_x,tar_y,tar_z,tar_vx,tar_vy,est_dis
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
@@ -42,6 +45,8 @@ float64 tar_vy
       #message fields cannot be None, assign default values for those that are
       if self.tar_OK is None:
         self.tar_OK = False
+      if self.is_laser_measured is None:
+        self.is_laser_measured = False
       if self.tar_x is None:
         self.tar_x = 0.
       if self.tar_y is None:
@@ -52,13 +57,17 @@ float64 tar_vy
         self.tar_vx = 0.
       if self.tar_vy is None:
         self.tar_vy = 0.
+      if self.est_dis is None:
+        self.est_dis = 0.
     else:
       self.tar_OK = False
+      self.is_laser_measured = False
       self.tar_x = 0.
       self.tar_y = 0.
       self.tar_z = 0.
       self.tar_vx = 0.
       self.tar_vy = 0.
+      self.est_dis = 0.
 
   def _get_types(self):
     """
@@ -73,7 +82,7 @@ float64 tar_vy
     """
     try:
       _x = self
-      buff.write(_get_struct_B5d().pack(_x.tar_OK, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy))
+      buff.write(_get_struct_2B6d().pack(_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.est_dis))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -86,9 +95,10 @@ float64 tar_vy
       end = 0
       _x = self
       start = end
-      end += 41
-      (_x.tar_OK, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy,) = _get_struct_B5d().unpack(str[start:end])
+      end += 50
+      (_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.est_dis,) = _get_struct_2B6d().unpack(str[start:end])
       self.tar_OK = bool(self.tar_OK)
+      self.is_laser_measured = bool(self.is_laser_measured)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -102,7 +112,7 @@ float64 tar_vy
     """
     try:
       _x = self
-      buff.write(_get_struct_B5d().pack(_x.tar_OK, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy))
+      buff.write(_get_struct_2B6d().pack(_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.est_dis))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -116,9 +126,10 @@ float64 tar_vy
       end = 0
       _x = self
       start = end
-      end += 41
-      (_x.tar_OK, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy,) = _get_struct_B5d().unpack(str[start:end])
+      end += 50
+      (_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.est_dis,) = _get_struct_2B6d().unpack(str[start:end])
       self.tar_OK = bool(self.tar_OK)
+      self.is_laser_measured = bool(self.is_laser_measured)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -127,9 +138,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_B5d = None
-def _get_struct_B5d():
-    global _struct_B5d
-    if _struct_B5d is None:
-        _struct_B5d = struct.Struct("<B5d")
-    return _struct_B5d
+_struct_2B6d = None
+def _get_struct_2B6d():
+    global _struct_2B6d
+    if _struct_2B6d is None:
+        _struct_2B6d = struct.Struct("<2B6d")
+    return _struct_2B6d
