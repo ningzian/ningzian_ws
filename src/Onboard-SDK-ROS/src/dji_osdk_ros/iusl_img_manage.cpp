@@ -16,9 +16,6 @@ std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet
 std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj_best.weights";
 int gim_max_speed = 8;
 float gim_control_k = 0.015;
-double Orig_lat = 30.12997303560482 * PI / 180;     // 原点的经纬度和海拔
-double Orig_lon = 120.07509457775448 * PI / 180;    // 云栖（待验证）（30.12997303560482、120.07509457775448、16.8）
-float Orig_alt = 10;                                 // 云谷（需要打点）
 
 // global param
 Detector detector(cfg_file, weight_file, 0);     // darknet detector
@@ -33,24 +30,20 @@ float detect_probability = 0;     // 检测到的概率
 bool box_ok = false;              // 当前是否检测到
 dji_osdk_ros::iuslDetectionResult detect_result;        // 检测结果
 
-
-double UAV_lat_now = 0;
+// 获取图片时的无人机和相机状态
+double UAV_lat_now = 0;     // 无人机当前的经纬度和海拔
 double UAV_lon_now = 0;
 float UAV_alt_now = 0;
-float UAV_roll_now = 0;
+float UAV_roll_now = 0;     // 无人机当前的姿态
 float UAV_pitch_now = 0;
 float UAV_yaw_now = 0;
-float cam_x_now = 0;
-float cam_y_now = 0;
-float cam_z_now = 0;
+float cam_pitch_now = 0;    // 相机的姿态
+float cam_yaw_now = 0;
+float cam_roll_now = 0;
 
-float gim_pitch_now = 0;
-float gim_yaw_now = 0;
-float gim_roll_now = 0;
-float laser_dis_now = 0;
+float laser_dis_now = 0;   // 激光测距距离
 
-time_t time_now_c;                // for img file save
-double image_time = 0;
+double image_time = 0;      // 获取图片的时间
 
 
 /* ===================================================================================
@@ -98,21 +91,23 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   if (box_ok)
   {
     // 检测框的结果赋值
-    detect_result.time = image_time;
     detect_result.center_x = box.x + box.width/2;
     detect_result.center_y = box.y + box.height/2;
     detect_result.box_width = box.width;
     detect_result.box_height = box.height;
     detect_result.max_length = std::max(box.width, box.height);
-    // 相机的状态赋值
-    detect_result.cam_pitch = gim_pitch_now;
-    detect_result.cam_yaw = gim_yaw_now;
-    detect_result.cam_roll = gim_roll_now;
-    detect_result.cam_x = cam_x_now;
-    detect_result.cam_y = cam_y_now;
-    detect_result.cam_z = cam_z_now;
-    // 激光测距数据的状态复制
-    detect_result.laser_dis = laser_dis_now;
+    // 获取到图片时的状态赋值
+    detect_result.time = image_time;          // 时间戳
+    detect_result.UAV_lat = UAV_lat_now;      // 无人机经纬度和海拔
+    detect_result.UAV_lon = UAV_lon_now;
+    detect_result.UAV_alt = UAV_alt_now;
+    detect_result.UAV_roll = UAV_roll_now;    // 无人机姿态
+    detect_result.UAV_pitch = UAV_pitch_now;
+    detect_result.UAV_yaw = UAV_yaw_now;
+    detect_result.cam_roll = cam_pitch_now;   // 相机机姿态
+    detect_result.cam_pitch = cam_yaw_now;
+    detect_result.cam_yaw = cam_roll_now;
+    detect_result.laser_dis = laser_dis_now;  // 激光测距
     /*if (flight_state > 1.5)
     {
       // put text 
@@ -136,7 +131,7 @@ void rtkPosCallback(const sensor_msgs::NavSatFix& msg)  //rtk pos
 
 void callback_recive_rtkYaw(const std_msgs::UInt16& msg)
 {
-  UAV_yaw_now = msg.data + 90;
+  UAV_yaw_now = (msg.data + 90) * PI / 180;
 }
 
 void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg)
@@ -157,7 +152,6 @@ void mobileCallback(const dji_osdk_ros::MobileData & msg)    // 接收PSDK的激
   
 }
 
-
 void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg)
 {
   // 读取无人机四元数，并转换为欧拉角 TODO! need test!
@@ -173,49 +167,6 @@ void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg)
   Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
   UAV_roll_now = euler(2);  
   UAV_pitch_now = - euler(1);
-
-  // 计算无人机的全局位置  TODO! need test!
-  double Ec = 6378137 * (1 - 21412/6356725 * std::pow(std::sin(UAV_lat_now), 2) ) + UAV_alt_now;
-  double Ed = Ec * std::cos(UAV_lat_now);
-  double d_lat = UAV_lat_now - Orig_lat;
-  double d_lon = UAV_lon_now - Orig_lon;
-  float UAV_x = d_lat * Ec;
-  float UAV_y = d_lon * Ed;
-  float UAV_z = Orig_alt - UAV_alt_now;
-  // 计算相机的全局位置 TODO! need test!
-  Eigen::Vector3d d_pos; 
-  d_pos(0) = 0.45;
-  d_pos(1) = -0.3;
-  d_pos(2) = 0.25;
-
-  Eigen::MatrixXd rz = Eigen::MatrixXd::Zero(3, 3); 
-  rz(0, 0) = std::cos(UAV_yaw_now);
-  rz(0, 1) = -std::sin(UAV_yaw_now);
-  rz(1, 0) = std::cos(UAV_yaw_now);
-  rz(1, 1) = std::sin(UAV_yaw_now);
-  rz(2, 2) = 1;
-
-  Eigen::MatrixXd ry = Eigen::MatrixXd::Zero(3, 3);  
-  ry(0, 0) = std::cos(UAV_pitch_now);
-  ry(0, 2) = std::sin(UAV_pitch_now);
-  ry(1, 1) = 1;
-  ry(2, 0) = -std::sin(UAV_pitch_now);
-  ry(2, 2) = std::cos(UAV_pitch_now);
-
-  Eigen::MatrixXd rx = Eigen::MatrixXd::Zero(3, 3);  
-  rx(0, 0) = 1;
-  rx(1, 1) = std::cos(UAV_roll_now);
-  rx(1, 2) = -std::sin(UAV_roll_now);
-  rx(2, 1) = std::sin(UAV_roll_now);
-  rx(2, 2) = std::cos(UAV_roll_now);
-  
-  Eigen::Vector3d d_pos_now;
-  d_pos_now = rz * ry * rx * d_pos;
-
-  cam_x_now = UAV_x + d_pos_now(0);
-  cam_y_now = UAV_y + d_pos_now(1);
-  cam_z_now = UAV_z + d_pos_now(2);
-
 
 }
 
@@ -250,7 +201,7 @@ int main(int argc, char **argv)
   //set_RTK_client.call(set_rtk_srv);
 
   // subscriber msg
-  image_transport::Subscriber sub_img = it.subscribe("iusl/main_camera_images", 1, imageCallback);
+ 
 
   ros::Subscriber sub_rtk_pos = nh.subscribe("dji_osdk_ros/rtk_position", 5, rtkPosCallback);
   ros::Subscriber sub_rtk_yaw = nh.subscribe("dji_osdk_ros/rtk_yaw", 3, callback_recive_rtkYaw);  // Int16
@@ -258,7 +209,7 @@ int main(int argc, char **argv)
   ros::Subscriber sub_gim_angle = nh.subscribe("dji_osdk_ros/gimbal_angle", 5, gimbalAngleCallback);
 
   ros::Subscriber sub_mobile = nh.subscribe("dji_osdk_ros/from_mobile_data", 5, mobileCallback);  //laser message
-
+  image_transport::Subscriber sub_img = it.subscribe("iusl/main_camera_images", 1, imageCallback);
 
 
   // publisher 

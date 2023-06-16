@@ -43,18 +43,13 @@
 
 #define  PI 3.141592653
 
-
-
-
-void imageCallback(const sensor_msgs::ImageConstPtr& msg);  // read img detect call back
-
 void rtkPosCallback(const sensor_msgs::NavSatFix& msg);  //read rtk pos
 void callback_recive_rtkYaw(const std_msgs::UInt16& msg);  //读取无人机的RTKyaw
 void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg);  //无人机自身的姿态
 void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg);  //read gimbal angle
 
 void mobileCallback(const dji_osdk_ros::MobileData & msg); 
-
+void imageCallback(const sensor_msgs::ImageConstPtr& msg);  // read img detect call back
 
 
 

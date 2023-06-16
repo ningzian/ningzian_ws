@@ -97,10 +97,6 @@ def callback_autofire_cmd(msg):
 # ==================================================================================
 
 # ---------------  need manual setup  -----------------------
-Orig_lat = math.radians(30.12997303560482)    # 原点的经纬度和海拔
-Orig_lon = math.radians(120.07509457775448)   # 云栖（待验证）（30.12997303560482、120.07509457775448、16.8）
-Orig_alt = 10.                                # 云谷（需要打点）
-
 est_UAV_real_length = 0.47                    # 目标的尺寸信息
 
 kf_Q = np.zeros([6, 6])             # 卡尔曼滤波的参数
@@ -126,6 +122,10 @@ kf_P[5, 5] = 0.1
 ground_mission_start = False      # 有没有在执行任务
 auto_fire_cmd = False
 bag_start = False
+
+home_lat = 0.      # 原点经纬度，起飞点的经纬度和海拔
+home_lon = 0.
+home_alt = 0.
 
 measure_is_new = False    # 相机观测的信息，包括观测时的无人机和相机的状态信息
 measure_time_stamp =0.
@@ -167,6 +167,12 @@ kf_F[1, 4] = 0.02
 kf_F[2, 5] = 0.02
 
 
+# ==================================================================================
+# ==========================  custom functions   ===================================
+# ==================================================================================
+def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, UAV_roll, UAV_pitch, UAV_yaw):
+
+  return cam_x, cam_y, cam_z
 
 
 

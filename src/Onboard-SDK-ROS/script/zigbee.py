@@ -78,7 +78,6 @@ bag_start = False             # 是否开始记录bag
 rospy.init_node('zigbee', anonymous=True)
 rate = rospy.Rate(50)
 
-
 # sub msg 
 rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
 # pub msg 
