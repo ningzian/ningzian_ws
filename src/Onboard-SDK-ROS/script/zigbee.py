@@ -31,7 +31,7 @@ from std_msgs.msg import Bool             # auto fire
 def callback_autofire_cmd(msg):
   global zigbee_serial
   if msg.data:
-    send_data = [237, 1, 0, 2, 255]    # ED 01 00 02 FF
+    send_data = [237, 1, 0, 1, 255]    # ED 01 00 01 FF
     zigbee_serial.write(send_data)
   return
 
@@ -69,7 +69,7 @@ zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
 ground_mission_cmd = 0        # 1 start mission, 2 pause mission, 3 go home
 ground_mission_start = False
 auto_fire_cmd = False         # from control node
-bag_start = False             # 是否开始记录bag
+#bag_start = False             # 是否开始记录bag
 
 
 # ==================================================================================
@@ -85,12 +85,12 @@ ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', U
 
 while True:
   # rosbag 
-  if bag_start and auto_fire_cmd:
-    bag_ground_cmd.close()
-    bag_start = False
-  if (not bag_start) and ground_mission_start:
-    bag_ground_cmd = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'ground_cmd.bag', 'w')
-    bag_start = True
+  #if bag_start and auto_fire_cmd:
+  #  bag_ground_cmd.close()
+  #  bag_start = False
+  #if (not bag_start) and ground_mission_start:
+  #  bag_ground_cmd = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'ground_cmd.bag', 'w')
+  #  bag_start = True
 
   # zigbee receive, receive from ground station: misssion cmd
   data_tem = zigbee_serial.read(1)
@@ -106,8 +106,8 @@ while True:
       if num == 1:
         ground_mission_cmd = data[0]
         ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd
-        if bag_start:
-          bag_ground_cmd.write('/iusl_bag/ground_cmd', ground_mission_cmd)
+        #if bag_start:
+        #  bag_ground_cmd.write('/iusl_bag/ground_cmd', ground_mission_cmd)
         # 更新 ground_mission_start
         if ground_mission_cmd > 0.5 and ground_mission_cmd < 1.5:
           ground_mission_start = True
