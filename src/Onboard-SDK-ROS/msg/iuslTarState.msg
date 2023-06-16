@@ -8,7 +8,5 @@ float64 tar_z
 float64 tar_vx
 float64 tar_vy
 
-float64 home_lat
-float64 home_lon
-float64 home_alt
+float64 est_dis
 
