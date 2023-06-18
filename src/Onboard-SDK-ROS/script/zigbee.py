@@ -18,7 +18,7 @@ import time
 from decimal import Decimal
 
 from dji_osdk_ros.msg import iuslTarState
-from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import NavSatFix     # rtk pos，记录home点的经纬度和海拔
 from std_msgs.msg import Int16            # rtk yaw
 from std_msgs.msg import UInt8            # ground mission cmd, flight state
 from std_msgs.msg import Bool             # auto fire
@@ -33,6 +33,15 @@ def callback_autofire_cmd(msg):
   if msg.data:
     send_data = [237, 1, 0, 1, 255]    # ED 01 00 01 FF
     zigbee_serial.write(send_data)
+  return
+
+#   接收RTK的经纬度和海拔，
+def callback_recive_rtkpos(msg):             # update my UAV pos
+  global home_rtk_publisher
+  global home_rtk_num
+  if (max(msg.position_covariance) < 1) and (home_rtk_num < 20):
+    home_rtk_publisher.publish(msg)
+    home_rtk_num += 1
   return
 
 
@@ -69,6 +78,8 @@ zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
 ground_mission_cmd = 0        # 1 start mission, 2 pause mission, 3 go home
 ground_mission_start = False
 auto_fire_cmd = False         # from control node
+
+home_rtk_num = 0
 #bag_start = False             # 是否开始记录bag
 
 
@@ -80,8 +91,10 @@ rate = rospy.Rate(50)
 
 # sub msg 
 rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
+rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 # pub msg 
 ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=3)
+home_rtk_publisher = rospy.Publisher('/iusl_ros/home_rtk', NavSatFix, queue_size = 10)
 
 while True:
   # rosbag 
