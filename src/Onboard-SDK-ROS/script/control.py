@@ -11,15 +11,18 @@ import math
 import os
 import time
 from decimal import Decimal
+import tf
 
 from dji_osdk_ros.msg import iuslTarState      # target state
 from dji_osdk_ros.msg import iuslMyState       # 自己的状态用于bag记录
 from dji_osdk_ros.msg import iuslUAVCtrlCmd    # 控制指令，用于bag记录
+from dji_osdk_ros.msg import iuslDetectionResult  # 接收检测框，用于自动打网
 from std_msgs.msg import UInt8                 # flight state, ground mission cmd
 from sensor_msgs.msg import NavSatFix          # RTK pos，home pos
 from std_msgs.msg import Int16                 # rtk yaw
 from std_msgs.msg import Bool                  # 网枪发射指令
 from geometry_msgs.msg import Vector3Stamped   # gimbal state,  UAV RTK velocity
+from geometry_msgs.msg import QuaternionStamped
 from dji_osdk_ros.msg import iuslDetectionResult  # 图像的检测结果，用于判断是否发射网枪
 from dji_osdk_ros.srv import ObtainControlAuthority
 
@@ -52,7 +55,25 @@ def callback_recive_rtkYaw(msg):
     UAV_yaw_now = UAV_yaw_now - 360
   return
 
-def callback_recive_rtkpos(msg):             # update my UAV pos
+def callback_UAV_attitude(msg):
+  global UAV_roll_now
+  global UAV_pitch_now
+  UAV_roll_now, UAV_pitch_now, _ = tf.transformations.euler_from_quaternion([msg.quaternion.x, msg.quaternion.y, msg.quaternion.z, msg.quaternion.w])
+  UAV_roll_now = math.degrees(UAV_roll_now)
+  UAV_pitch_now = - math.degrees(UAV_pitch_now)
+  return
+
+def callback_recive_gimbal_angle(msg):
+  global cam_yaw_now
+  global cam_roll_now
+  global cam_pitch_now
+  cam_pitch_now = msg.vector.x
+  cam_roll_now = msg.vector.y
+  cam_yaw_now = msg.vector.z
+  return
+
+# 接收自己的rtk状态
+def callback_recive_rtkpos(msg):             
   # 读取状态
   global home_rtk_OK
   global home_rtk
@@ -85,7 +106,40 @@ def callback_recive_rtkpos(msg):             # update my UAV pos
 
   return
 
+# 接收检测框的信息，用于判断是否打网
+def callback_recive_DetectionResult(msg):
+  global bounding_box_OK
+  global bounding_box_center_x
+  global bounding_box_center_y
+  global bounding_box_width
+  global bounding_box_height
+  bounding_box_OK = True
+  bounding_box_center_x = msg.center_x
+  bounding_box_center_y = msg.center_y
+  bounding_box_width = msg.box_width
+  bounding_box_height = msg.box_height
+  return
 
+# 接收估计节点估计的目标状态
+def callback_receive_est_tar(msg):
+  # 更新的状态
+  global est_tar_OK
+  global est_laser_OK
+  global est_tar_pos_x
+  global est_tar_pos_y
+  global est_tar_pos_z
+  global est_tar_vx
+  global est_tar_vy
+  global est_fuse_dis
+  est_tar_OK = msg.tar_OK
+  est_laser_OK = msg.is_laser_measured
+  est_tar_pos_x = msg.tar_x
+  est_tar_pos_y = msg.tar_y
+  est_tar_pos_z = msg.tar_z
+  est_tar_vx = msg.tar_vx
+  est_tar_vy = msg.tar_vy
+  est_fuse_dis = fuse_dis
+  return
 
 
 # ==================================================================================
@@ -111,14 +165,54 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
   cam_x = UAV_x + dpos[0, 0]
   cam_y = UAV_y + dpos[0, 1]
   cam_z = UAV_z + dpos[0, 2]
-
   return cam_x, cam_y, cam_z
+
+
+# 根据目标的状态和自己的状态，计算水平速度和垂直高度指令
+def cal_my_cmd(dz, dh, k_h, max_speed,
+               tar_x, tar_y, tar_z, tar_vx, tar_vy, 
+               my_x, my_y, cam_yaw_now,
+               home_alt):
+  # 计算高度控制指令
+  z_cmd = - est_tar_z + 2.9 + home_alt
+  # 计算偏航控制指令
+  yaw_cmd = cam_yaw_now
+  # 计算水平速度指令
+  dx = tar_x - my_x
+  dy = tar_y - my_y
+  dis2 = dx**2 + dy**2 + 0.01
+  vx_cmd = tar_vx + k * (dis2 - dh**2) / dis2 * dx   # dxy = 5
+  vy_cmd = tar_vy + k * (dis2 - dh**2) / dis2 * dy
+  cmd_vel_norm = math.sqrt(vx_cmd**2 + vy_cmd**2)
+  if cmd_vel_norm > max_speed:
+    vx_cmd = vx_cmd/cmd_vel_norm*max_speed
+    vy_cmd = vy_cmd/cmd_vel_norm*max_speed
+  return vx_cmd, vy_cmd, z_cmd, yaw_cmd
+
+
+# 网枪发射判断算法
+def auto_fire_decide(box_center_x, box_center_y, box_width, box_height, 
+                     UAV_pitch, UAV_roll, UAV_yaw, 
+                     cam_pitch, cam_roll, cam_yaw,
+                     fuse_dis)
+  # 计算准星在图像总的投影坐标点
+  d_pitch = cam_pitch - UAV_pitch
+  d_roll = cam_roll - UAV_roll
+  d_yaw = cam_yaw - UAV_yaw
+  # 计算旋转矩阵（机体坐标系到相机坐标系的旋转矩阵）
+  
+  return
 
 
 
 # ==========================================================================================
 # ================================= 全局变量 ================================================
 # ==========================================================================================
+# 需要手动设置的参数
+dz = 3    # 抓捕的垂直高度差
+dh = 4    # 抓捕的水平距离差
+k_h = 0.1 # 水平控制系数
+max_speed = 2
 
 # 状态量（需要更新）
 home_rtk_OK = False     # home 原点的坐标
@@ -127,15 +221,32 @@ home_rtk = NavSatFix()
 UAV_lat_now = 0.         # 自己的状态
 UAV_lon_now = 0.
 UAV_alt_now = 0.
+UAV_roll_now = 0.
+UAV_pitch_now = 0.
 UAV_yaw_now = 0.
 UAV_vx_now = 0.
 UAV_vy_now = 0.
 cam_x_now = 0.
 cam_y_now = 0.
 cam_z_now = 0.
+cam_roll_now = 0.
+cam_pitch_now = 0.
+cam_yaw_now = 0.
 
+bounding_box_OK = False  # 检测框的信息
+bounding_box_center_x = 0.  
+bounding_box_center_y = 0.
+bounding_box_width = 0.
+bounding_box_height = 0.
 
-
+est_tar_OK = False
+est_laser_OK = False
+est_tar_pos_x = 0.
+est_tar_pos_y = 0.
+est_tar_pos_z = 0.
+est_tar_vx = 0.
+est_tar_vy = 0.
+est_fuse_dis = 0.
 
 
 # ==========================================================================================
@@ -150,6 +261,13 @@ rospy.Subscriber('/iusl_ros/home_rtk', NavSatFix, callback_recive_home_rtk)
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 rospy.Subscriber('dji_osdk_ros/rtk_velocity', Vector3Stamped, callback_recive_rtkvel)         # my rtk vel
 rospy.Subscriber('/dji_osdk_ros/rtk_yaw', Int16, callback_recive_rtkYaw) 
+rospy.Subscriber('dji_osdk_ros/attitude', callback_UAV_attitude)
+rospy.Subscriber('dji_osdk_ros/gimbal_angle', Vector3Stamped, callback_recive_gimbal_angle)
+rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
+rospy.Subscriber('/iusl_ros/estimate_tar_state', iuslTarState, callback_receive_est_tar)
+
+
+
 
 # 获取控制权限
 rospy.wait_for_service('obtain_release_control_authority')

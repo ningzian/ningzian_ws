@@ -9,5 +9,5 @@ float64 tar_z
 float64 tar_vx
 float64 tar_vy
 
-float64 est_dis
+float64 fuse_dis
 

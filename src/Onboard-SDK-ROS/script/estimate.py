@@ -45,7 +45,7 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
   global est_UAV_real_length
   global kf_R_original
   global est_direction_g_bar
-  global est_dis
+  global fuse_dis
   # 需要用到的
   global mobileBox_publisher
 
@@ -95,17 +95,17 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     cam_f = 0.0045  # for 1536x864
     cam_s = 0.000004093  # for 1536x864
     if abs(dx) < measure_max_length/2 and abs(dy) < measure_max_length/3 and measure_laser_dis < 20 and measure_laser_dis > 2:
-      est_dis = measure_laser_dis
+      fuse_dis = measure_laser_dis
       est_UAV_real_length = measure_laser_dis * measure_max_length * cam_s / cam_f
       kf_R_original[3, 3] = 0.000001
     else:
       if measure_max_length < 1:  #(prevent division of zero) 
         measure_max_length = 1
-      est_dis = est_UAV_real_length * math.sqrt(cam_f**2 + (dx**2 + dy**2) * (cam_s**2)) / (measure_max_length * cam_s)
+      fuse_dis = est_UAV_real_length * math.sqrt(cam_f**2 + (dx**2 + dy**2) * (cam_s**2)) / (measure_max_length * cam_s)
     # 发送估计的距离到遥PSDK
     dis_to_mobile = Int32MultiArray()
-    M_data_int = int (est_dis) 
-    M_data_dec = int ((est_dis - M_data_int) * 10) 
+    M_data_int = int (fuse_dis) 
+    M_data_dec = int ((fuse_dis - M_data_int) * 10) 
     dis_to_mobile.data.append(M_data_int)
     dis_to_mobile.data.append(M_data_dec)
     mobileBox_publisher.publish(dis_to_mobile)
@@ -199,7 +199,7 @@ pos_my = np.zeros([3, 1])  # 自己相机的全局位置坐标
 
 est_kf_OK = False
 est_direction_g_bar = zeros(3, 1)       # 预处理得到的观测信息
-est_dis = 0.
+fuse_dis = 0.
 kf_estimated_state = np.array([[0],[0],[0], [0], [0], [0]])    # initial state
 
 est_tar_state = iuslTarState()
@@ -267,7 +267,7 @@ while True:
       measure_is_new = False
       # calculate mear state
       z1 = np.dot((np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar))), pos_my)
-      z2 = pos_my + np.dot(est_dis, est_direction_g_bar)
+      z2 = pos_my + np.dot(fuse_dis, est_direction_g_bar)
       kf_mear_state = np.vstack([z1, z2])
       # calculate KF_R
       r_tem = np.linalg.norm(kf_estimated_state[0:3, 0] - pos_my)
@@ -282,7 +282,7 @@ while True:
       kf_H = np.hstack([H1, H2])  
       
       if not est_kf_OK:   # 第一次的估计状态
-        kf_estimated_state = np.vstack([pos_my + est_direction_g_bar * est_dis, np.array([[0], [0], [0]])])
+        kf_estimated_state = np.vstack([pos_my + est_direction_g_bar * fuse_dis, np.array([[0], [0], [0]])])
         est_kf_OK = True
       else:  # PLKF 步骤：5个公式
         kf_estimated_state = np.dot(kf_F, kf_estimated_state)
@@ -302,7 +302,7 @@ while True:
     est_tar_state.tar_z = ekf_estimated_state[2,0]
     est_tar_state.tar_vx = ekf_estimated_state[3,0]
     est_tar_state.tar_vy = ekf_estimated_state[4,0]
-    est_tar_state.est_dis = est_dis
+    est_tar_state.fuse_dis = fuse_dis
     est_tar_state_publisher.publish(est_tar_state)
   # end if ground_mission_start
 
