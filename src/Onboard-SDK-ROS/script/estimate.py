@@ -62,11 +62,11 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     # 计算 UAV全局位置 UAV_x, UAV_y, UAV_z
     Ec = 6378137. * (1 - 21412./6356725. * (math.sin(UAV_lat)**2) ) + UAV_alt
     Ed = Ec * math.cos(UAV_lat)
-    d_lat = UAV_lat - Orig_lat
-    d_lon = UAV_lon - Orig_lon
+    d_lat = UAV_lat - home_lat
+    d_lon = UAV_lon - home_lon
     UAV_x = d_lat * Ec
     UAV_y = d_lon * Ed
-    UAV_z = Orig_alt - UAV_alt
+    UAV_z = home_alt - UAV_alt
     # 计算相机的全局位置 pos_my
     UAV_yaw = math.radians(msg.UAV_yaw)
     cam_x, cam_y, cam_z = calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, UAV_yaw)
@@ -215,9 +215,6 @@ kf_F = np.identity(6)
 kf_F[0, 3] = 0.02
 kf_F[1, 4] = 0.02
 kf_F[2, 5] = 0.02
-
-
-
 
 
 

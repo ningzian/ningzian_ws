@@ -30,9 +30,15 @@ from std_msgs.msg import Bool             # auto fire
 # 接收发射网枪的指令，如果有发射指令，将指令返回给地面站
 def callback_autofire_cmd(msg):
   global zigbee_serial
-  if msg.data:
-    send_data = [237, 1, 0, 1, 255]    # ED 01 00 01 FF
-    zigbee_serial.write(send_data)
+  global netgun_serial
+  if msg.data:  
+    # 网枪发射0xFF, 0x02, 0x00, 0xBA, 0x06
+    zigbee_send_data = [237, 1, 0, 1, 255]    # ED 01 00 01 FF
+    net_send_data = [255, 2, 0, 186, 6] 
+    for i = range(3):
+      netgun_serial.write(net_send_data)
+      zigbee_serial.write(send_data)
+      time.sleep(0.1)    
   return
 
 #   接收RTK的经纬度和海拔，
@@ -72,6 +78,7 @@ def encode(data):
 
 # need manual setup
 zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
+netgun_serial = serial.Serial('/dev/ttyUSB1', 9600, timeout=0.5) 
 
 
 # updated states
@@ -95,6 +102,10 @@ rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpo
 # pub msg 
 ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=3)
 home_rtk_publisher = rospy.Publisher('/iusl_ros/home_rtk', NavSatFix, queue_size = 10)
+
+# 网枪复位0xFF, 0x02, 0x00, 0xF4, 0x01
+send_data = [255, 2, 0, 244, 1]  
+netgun_serial.write(send_data)
 
 while True:
   # rosbag 
