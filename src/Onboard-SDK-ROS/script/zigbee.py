@@ -45,7 +45,7 @@ def callback_autofire_cmd(msg):
 def callback_recive_rtkpos(msg):             # update my UAV pos
   global home_rtk_publisher
   global home_rtk_num
-  if (home_rtk_num < 20) and (max(msg.position_covariance) < 1) and (msg.altitude > 0):
+  if (home_rtk_num < 20) and (max(msg.position_covariance) < 0.02) and (msg.altitude > 0.5):
     home_rtk_publisher.publish(msg)
     home_rtk_num += 1
   return

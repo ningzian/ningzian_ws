@@ -195,26 +195,42 @@ def auto_fire_decide(box_center_x, box_center_y, box_width, box_height,
                      UAV_pitch, UAV_roll, UAV_yaw, 
                      cam_pitch, cam_roll, cam_yaw,
                      fuse_dis)
-  # 计算准星在图像总的投影坐标点
-  d_pitch = cam_pitch - UAV_pitch
-  d_roll = cam_roll - UAV_roll
-  d_yaw = cam_yaw - UAV_yaw
-  # 计算旋转矩阵（机体坐标系到相机坐标系的旋转矩阵）
-  R_1_g2c = np.array([[0, 1, 0], 
-                      [0, 0, 1], 
-                      [1, 0, 0]])
-  R_x = np.array([[1, 0, 0],
-                  [0, math.cos(d_roll), math.sin(d_roll)],
-                  [0, -math.sin(d_roll), math.cos(d_roll)]])
-  R_y = np.array([[math.cos(d_pitch), 0, -math.sin(d_pitch)],
-                  [0, 1, 0],
-                  [math.sin(d_pitch), 0, math.cos(d_pitch)]])
-  R_z = np.array([[math.cos(d_yaw), math.sin(d_yaw), 0],
-                  [-math.sin(d_yaw), math.cos(d_yaw), 0],
-                  [0, 0, 1]])
-  R = np.dot(np.dot(np.dot(R_1_g2c, R_x), R_y), R_z)
-  
-  return
+  if (fuse_dis > 7) or (fuse_dis < 3):
+    auto_fire_cmd = False
+  else:
+    # 计算准星在图像总的投影坐标点
+    d_pitch = cam_pitch - UAV_pitch
+    d_roll = cam_roll - UAV_roll
+    d_yaw = cam_yaw - UAV_yaw
+    #     计算旋转矩阵（机体坐标系到相机坐标系的旋转矩阵）
+    R_1_g2c = np.array([[0, 1, 0], 
+                        [0, 0, 1], 
+                        [1, 0, 0]])
+    R_x = np.array([[1, 0, 0],
+                    [0, math.cos(d_roll), math.sin(d_roll)],
+                    [0, -math.sin(d_roll), math.cos(d_roll)]])
+    R_y = np.array([[math.cos(d_pitch), 0, -math.sin(d_pitch)],
+                    [0, 1, 0],
+                    [math.sin(d_pitch), 0, math.cos(d_pitch)]])
+    R_z = np.array([[math.cos(d_yaw), math.sin(d_yaw), 0],
+                    [-math.sin(d_yaw), math.cos(d_yaw), 0],
+                    [0, 0, 1]])
+    R = np.dot(np.dot(np.dot(R_1_g2c, R_x), R_y), R_z)
+    d_pos_b = np.array([[math.cos(math.radians(35))], [0], [math.sin(math.radians(35))]])
+    d_pos_c = np.dot(R, d_pos_b)
+    Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])
+    fire_cross = np.dot(Intrinsic_Matrix, d_pos_c)
+    fire_cross_x = fire_cross[0, 0]
+    fire_cross_y = fire_cross[0, 1] + box_height/4
+    # 判断准星是否在检测框内
+    fire_cross_dx = abs(fire_cross_x - box_center_x)
+    fire_cross_dy = abs(fire_cross_y - box_center_y)
+    if (fire_cross_dx < box_width/1.5) and (fire_cross_dy < box_height/1.5):
+      auto_fire_cmd = True
+    else:
+      auto_fire_cmd = False
+
+  return auto_fire_cmd
 
 
 
@@ -287,4 +303,7 @@ rospy.wait_for_service('obtain_release_control_authority')
 Obtain_control_handle = rospy.ServiceProxy('obtain_release_control_authority', ObtainControlAuthority)
 res = Obtain_control_handle(True)
 Obtain_control = True
+
+# 开始循环
+while True:
 
