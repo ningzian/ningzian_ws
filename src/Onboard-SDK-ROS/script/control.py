@@ -200,6 +200,19 @@ def auto_fire_decide(box_center_x, box_center_y, box_width, box_height,
   d_roll = cam_roll - UAV_roll
   d_yaw = cam_yaw - UAV_yaw
   # 计算旋转矩阵（机体坐标系到相机坐标系的旋转矩阵）
+  R_1_g2c = np.array([[0, 1, 0], 
+                      [0, 0, 1], 
+                      [1, 0, 0]])
+  R_x = np.array([[1, 0, 0],
+                  [0, math.cos(d_roll), math.sin(d_roll)],
+                  [0, -math.sin(d_roll), math.cos(d_roll)]])
+  R_y = np.array([[math.cos(d_pitch), 0, -math.sin(d_pitch)],
+                  [0, 1, 0],
+                  [math.sin(d_pitch), 0, math.cos(d_pitch)]])
+  R_z = np.array([[math.cos(d_yaw), math.sin(d_yaw), 0],
+                  [-math.sin(d_yaw), math.cos(d_yaw), 0],
+                  [0, 0, 1]])
+  R = np.dot(np.dot(np.dot(R_1_g2c, R_x), R_y), R_z)
   
   return
 
