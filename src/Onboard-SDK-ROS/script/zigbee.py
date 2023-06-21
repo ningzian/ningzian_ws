@@ -24,14 +24,19 @@ from std_msgs.msg import Bool             # auto fire
 def callback_autofire_cmd(msg):
   global zigbee_serial
   global netgun_serial
-  if msg.data:  
+  global ground_mission_cmd
+  global home_rtk_OK
+  global fired
+  # fire
+  if (not fired) and home_rtk_OK and ground_mission_cmd and msg.data:  
     # 网枪发射0xFF, 0x02, 0x00, 0xBA, 0x06
     zigbee_send_data = [237, 1, 0, 1, 255]    # ED 01 00 01 FF
     net_send_data = [255, 2, 0, 186, 6] 
-    for i = range(3):
+    for i in range(3):
       netgun_serial.write(net_send_data)
-      zigbee_serial.write(send_data)
-      time.sleep(0.1)    
+      zigbee_serial.write(zigbee_send_data)
+      fired = True
+      time.sleep(0.1)  
   return
 
 #   接收RTK的经纬度和海拔，
@@ -39,14 +44,16 @@ def callback_recive_rtkpos(msg):             # update my UAV pos
   # for msg pub
   global home_rtk_publisher
   global home_rtk_num
+  global home_rtk_OK
   # for ros bag
   global bag_start
   global bag_home_rtk
-  if (home_rtk_num < 20) and (max(msg.position_covariance) < 0.02) and (msg.altitude > 0.5):
+  if (home_rtk_num < 20) and (max(msg.position_covariance) > 0) and (max(msg.position_covariance) < 0.02) and (msg.altitude > 0.5):
     home_rtk_publisher.publish(msg)
     home_rtk_num += 1
-  if bag_start:
-    bag_home_rtk.write('/iusl_bag/home_rtk', msg)
+    home_rtk_OK = True
+    if bag_start:
+      bag_home_rtk.write('/iusl_bag/home_rtk', msg)
   return
 
 
@@ -81,11 +88,14 @@ netgun_serial = serial.Serial('/dev/ttyUSB1', 9600, timeout=0.5)
 
 
 # updated states
-ground_mission_cmd = 0        # 1 start mission, 2 pause mission, 3 go home
+ground_mission_cmd = False    
 ground_mission_start = False
 auto_fire_cmd = False         # from control node
+fired = False
+bag_start = False
 
 home_rtk_num = 0
+home_rtk_OK = False
 #bag_start = False             # 是否开始记录bag
 
 
@@ -134,10 +144,14 @@ while True:
           ground_mission_cmd = True
         elif ground_mission_data < 0.5:
           ground_mission_cmd = False
-        ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd
-
+          if fired:
+            send_data = [255, 2, 0, 244, 1]  
+            netgun_serial.write(send_data)
   # end receive zigbee data
+  # pub ground_mission_cmd
+  ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd      
   rate.sleep()
+# end while
 
 
 

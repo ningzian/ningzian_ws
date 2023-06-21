@@ -339,7 +339,7 @@ while True:
   
   
   # 控制自己的飞行
-  if ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
+  if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
     # 判断是否需要发射网枪
     auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
                                      UAV_pitch_now, UAV_roll_now, UAV_yaw_now, 

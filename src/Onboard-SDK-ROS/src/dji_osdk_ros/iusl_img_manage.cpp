@@ -14,8 +14,8 @@
 std::string data_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/obj.data";
 std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj.cfg";
 std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj_best.weights";
-int gim_max_speed = 8;
-float gim_control_k = 0.02;   // 0.015
+int gim_max_speed = 7;       // 8
+float gim_control_k = 0.035;   // 0.015
 
 // global param
 Detector detector(cfg_file, weight_file, 0);     // darknet detector
@@ -184,6 +184,9 @@ int main(int argc, char **argv)
   //cv::namedWindow("view");
   net_width = detector.get_net_width();      // detecotor
   net_height = detector.get_net_height();
+
+  // delay time
+  ros::Duration(5).sleep();
   
   // start main camera stream 
   ros::service::waitForService("/setup_camera_stream");

@@ -4,6 +4,8 @@
 #include <ros/ros.h>
 #include <ros/spinner.h>
 #include <ros/callback_queue.h>
+#include <ros/time.h>
+#include <ros/duration.h>
 #include <image_transport/image_transport.h>   //ros img transport(fast)
 #include <opencv2/tracking.hpp>           // KCF tracking
 #include <opencv2/highgui/highgui.hpp>
@@ -12,7 +14,6 @@
 #include <string>
 #include <boost/thread.hpp>
 #include <algorithm>
-#include <time.h>
 #include <iostream>
 
 #include <eigen3/Eigen/Dense>     // eigen， 用于四元数到欧拉角的转换

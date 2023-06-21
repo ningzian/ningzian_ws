@@ -14,7 +14,7 @@
 
 (defclass dji_osdk_ros::iuslTarState
   :super ros::object
-  :slots (_tar_OK _is_laser_measured _tar_x _tar_y _tar_z _tar_vx _tar_vy _est_dis ))
+  :slots (_tar_OK _is_laser_measured _tar_x _tar_y _tar_z _tar_vx _tar_vy _fuse_dis ))
 
 (defmethod dji_osdk_ros::iuslTarState
   (:init
@@ -26,7 +26,7 @@
     ((:tar_z __tar_z) 0.0)
     ((:tar_vx __tar_vx) 0.0)
     ((:tar_vy __tar_vy) 0.0)
-    ((:est_dis __est_dis) 0.0)
+    ((:fuse_dis __fuse_dis) 0.0)
     )
    (send-super :init)
    (setq _tar_OK __tar_OK)
@@ -36,7 +36,7 @@
    (setq _tar_z (float __tar_z))
    (setq _tar_vx (float __tar_vx))
    (setq _tar_vy (float __tar_vy))
-   (setq _est_dis (float __est_dis))
+   (setq _fuse_dis (float __fuse_dis))
    self)
   (:tar_OK
    (&optional __tar_OK)
@@ -59,9 +59,9 @@
   (:tar_vy
    (&optional __tar_vy)
    (if __tar_vy (setq _tar_vy __tar_vy)) _tar_vy)
-  (:est_dis
-   (&optional __est_dis)
-   (if __est_dis (setq _est_dis __est_dis)) _est_dis)
+  (:fuse_dis
+   (&optional __fuse_dis)
+   (if __fuse_dis (setq _fuse_dis __fuse_dis)) _fuse_dis)
   (:serialization-length
    ()
    (+
@@ -79,7 +79,7 @@
     8
     ;; float64 _tar_vy
     8
-    ;; float64 _est_dis
+    ;; float64 _fuse_dis
     8
     ))
   (:serialize
@@ -100,8 +100,8 @@
        (sys::poke _tar_vx (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _tar_vy
        (sys::poke _tar_vy (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
-     ;; float64 _est_dis
-       (sys::poke _est_dis (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
+     ;; float64 _fuse_dis
+       (sys::poke _fuse_dis (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;;
      (if (null strm) (get-output-stream-string s))))
   (:deserialize
@@ -120,16 +120,17 @@
      (setq _tar_vx (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _tar_vy
      (setq _tar_vy (sys::peek buf ptr- :double)) (incf ptr- 8)
-   ;; float64 _est_dis
-     (setq _est_dis (sys::peek buf ptr- :double)) (incf ptr- 8)
+   ;; float64 _fuse_dis
+     (setq _fuse_dis (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;;
    self)
   )
 
-(setf (get dji_osdk_ros::iuslTarState :md5sum-) "fa6098269c9336e18e8e70250407c05a")
+(setf (get dji_osdk_ros::iuslTarState :md5sum-) "b55949212e6e57bd4195732ade60e369")
 (setf (get dji_osdk_ros::iuslTarState :datatype-) "dji_osdk_ros/iuslTarState")
 (setf (get dji_osdk_ros::iuslTarState :definition-)
       "# estimated target UAV state
+
 bool tar_OK
 bool is_laser_measured
 
@@ -139,13 +140,13 @@ float64 tar_z
 float64 tar_vx
 float64 tar_vy
 
-float64 est_dis
+float64 fuse_dis
 
 
 ")
 
 
 
-(provide :dji_osdk_ros/iuslTarState "fa6098269c9336e18e8e70250407c05a")
+(provide :dji_osdk_ros/iuslTarState "b55949212e6e57bd4195732ade60e369")
 
 

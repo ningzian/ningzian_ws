@@ -1221,6 +1221,7 @@ Onboard-SDK-ROS/src/dji_osdk_ros/CMakeFiles/iusl_img_manage.dir/iusl_img_manage.
  /usr/include/c++/5/deque
  /usr/include/c++/5/bits/stl_deque.h
  /usr/include/c++/5/bits/deque.tcc
+ /opt/ros/kinetic/include/ros/duration.h
  /opt/ros/kinetic/include/image_transport/image_transport.h
  /opt/ros/kinetic/include/image_transport/publisher.h
  /opt/ros/kinetic/include/sensor_msgs/Image.h

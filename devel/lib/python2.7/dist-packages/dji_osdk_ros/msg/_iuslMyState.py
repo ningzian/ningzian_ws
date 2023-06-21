@@ -7,17 +7,22 @@ import struct
 
 
 class iuslMyState(genpy.Message):
-  _md5sum = "300d4f75ca62584d1d351cb6e7c982b6"
+  _md5sum = "acb74560be271ca4b46ca1a39952dd6b"
   _type = "dji_osdk_ros/iuslMyState"
   _has_header = False #flag to mark the presence of a Header object
-  _full_text = """float64 my_UAV_x
-float64 my_UAV_y
-float64 my_UAV_z
-float64 my_UAV_vx
-float64 my_UAV_vy
+  _full_text = """float64 UAV_lat
+float64 UAV_lon
+float64 UAV_alt
+float64 UAV_yaw
+float64 UAV_vx
+float64 UAV_vy
+float64 cam_x
+float64 cam_y
+float64 cam_z
+
 """
-  __slots__ = ['my_UAV_x','my_UAV_y','my_UAV_z','my_UAV_vx','my_UAV_vy']
-  _slot_types = ['float64','float64','float64','float64','float64']
+  __slots__ = ['UAV_lat','UAV_lon','UAV_alt','UAV_yaw','UAV_vx','UAV_vy','cam_x','cam_y','cam_z']
+  _slot_types = ['float64','float64','float64','float64','float64','float64','float64','float64','float64']
 
   def __init__(self, *args, **kwds):
     """
@@ -27,7 +32,7 @@ float64 my_UAV_vy
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-       my_UAV_x,my_UAV_y,my_UAV_z,my_UAV_vx,my_UAV_vy
+       UAV_lat,UAV_lon,UAV_alt,UAV_yaw,UAV_vx,UAV_vy,cam_x,cam_y,cam_z
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
@@ -36,22 +41,34 @@ float64 my_UAV_vy
     if args or kwds:
       super(iuslMyState, self).__init__(*args, **kwds)
       #message fields cannot be None, assign default values for those that are
-      if self.my_UAV_x is None:
-        self.my_UAV_x = 0.
-      if self.my_UAV_y is None:
-        self.my_UAV_y = 0.
-      if self.my_UAV_z is None:
-        self.my_UAV_z = 0.
-      if self.my_UAV_vx is None:
-        self.my_UAV_vx = 0.
-      if self.my_UAV_vy is None:
-        self.my_UAV_vy = 0.
+      if self.UAV_lat is None:
+        self.UAV_lat = 0.
+      if self.UAV_lon is None:
+        self.UAV_lon = 0.
+      if self.UAV_alt is None:
+        self.UAV_alt = 0.
+      if self.UAV_yaw is None:
+        self.UAV_yaw = 0.
+      if self.UAV_vx is None:
+        self.UAV_vx = 0.
+      if self.UAV_vy is None:
+        self.UAV_vy = 0.
+      if self.cam_x is None:
+        self.cam_x = 0.
+      if self.cam_y is None:
+        self.cam_y = 0.
+      if self.cam_z is None:
+        self.cam_z = 0.
     else:
-      self.my_UAV_x = 0.
-      self.my_UAV_y = 0.
-      self.my_UAV_z = 0.
-      self.my_UAV_vx = 0.
-      self.my_UAV_vy = 0.
+      self.UAV_lat = 0.
+      self.UAV_lon = 0.
+      self.UAV_alt = 0.
+      self.UAV_yaw = 0.
+      self.UAV_vx = 0.
+      self.UAV_vy = 0.
+      self.cam_x = 0.
+      self.cam_y = 0.
+      self.cam_z = 0.
 
   def _get_types(self):
     """
@@ -66,7 +83,7 @@ float64 my_UAV_vy
     """
     try:
       _x = self
-      buff.write(_get_struct_5d().pack(_x.my_UAV_x, _x.my_UAV_y, _x.my_UAV_z, _x.my_UAV_vx, _x.my_UAV_vy))
+      buff.write(_get_struct_9d().pack(_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -79,8 +96,8 @@ float64 my_UAV_vy
       end = 0
       _x = self
       start = end
-      end += 40
-      (_x.my_UAV_x, _x.my_UAV_y, _x.my_UAV_z, _x.my_UAV_vx, _x.my_UAV_vy,) = _get_struct_5d().unpack(str[start:end])
+      end += 72
+      (_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z,) = _get_struct_9d().unpack(str[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -94,7 +111,7 @@ float64 my_UAV_vy
     """
     try:
       _x = self
-      buff.write(_get_struct_5d().pack(_x.my_UAV_x, _x.my_UAV_y, _x.my_UAV_z, _x.my_UAV_vx, _x.my_UAV_vy))
+      buff.write(_get_struct_9d().pack(_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -108,8 +125,8 @@ float64 my_UAV_vy
       end = 0
       _x = self
       start = end
-      end += 40
-      (_x.my_UAV_x, _x.my_UAV_y, _x.my_UAV_z, _x.my_UAV_vx, _x.my_UAV_vy,) = _get_struct_5d().unpack(str[start:end])
+      end += 72
+      (_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z,) = _get_struct_9d().unpack(str[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -118,9 +135,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_5d = None
-def _get_struct_5d():
-    global _struct_5d
-    if _struct_5d is None:
-        _struct_5d = struct.Struct("<5d")
-    return _struct_5d
+_struct_9d = None
+def _get_struct_9d():
+    global _struct_9d
+    if _struct_9d is None:
+        _struct_9d = struct.Struct("<9d")
+    return _struct_9d

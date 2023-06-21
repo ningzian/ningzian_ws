@@ -25,7 +25,7 @@ class iuslTarState {
       this.tar_z = null;
       this.tar_vx = null;
       this.tar_vy = null;
-      this.est_dis = null;
+      this.fuse_dis = null;
     }
     else {
       if (initObj.hasOwnProperty('tar_OK')) {
@@ -70,11 +70,11 @@ class iuslTarState {
       else {
         this.tar_vy = 0.0;
       }
-      if (initObj.hasOwnProperty('est_dis')) {
-        this.est_dis = initObj.est_dis
+      if (initObj.hasOwnProperty('fuse_dis')) {
+        this.fuse_dis = initObj.fuse_dis
       }
       else {
-        this.est_dis = 0.0;
+        this.fuse_dis = 0.0;
       }
     }
   }
@@ -95,8 +95,8 @@ class iuslTarState {
     bufferOffset = _serializer.float64(obj.tar_vx, buffer, bufferOffset);
     // Serialize message field [tar_vy]
     bufferOffset = _serializer.float64(obj.tar_vy, buffer, bufferOffset);
-    // Serialize message field [est_dis]
-    bufferOffset = _serializer.float64(obj.est_dis, buffer, bufferOffset);
+    // Serialize message field [fuse_dis]
+    bufferOffset = _serializer.float64(obj.fuse_dis, buffer, bufferOffset);
     return bufferOffset;
   }
 
@@ -118,8 +118,8 @@ class iuslTarState {
     data.tar_vx = _deserializer.float64(buffer, bufferOffset);
     // Deserialize message field [tar_vy]
     data.tar_vy = _deserializer.float64(buffer, bufferOffset);
-    // Deserialize message field [est_dis]
-    data.est_dis = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [fuse_dis]
+    data.fuse_dis = _deserializer.float64(buffer, bufferOffset);
     return data;
   }
 
@@ -134,13 +134,14 @@ class iuslTarState {
 
   static md5sum() {
     //Returns md5sum for a message object
-    return 'fa6098269c9336e18e8e70250407c05a';
+    return 'b55949212e6e57bd4195732ade60e369';
   }
 
   static messageDefinition() {
     // Returns full string definition for message
     return `
     # estimated target UAV state
+    
     bool tar_OK
     bool is_laser_measured
     
@@ -150,7 +151,7 @@ class iuslTarState {
     float64 tar_vx
     float64 tar_vy
     
-    float64 est_dis
+    float64 fuse_dis
     
     
     `;
@@ -211,11 +212,11 @@ class iuslTarState {
       resolved.tar_vy = 0.0
     }
 
-    if (msg.est_dis !== undefined) {
-      resolved.est_dis = msg.est_dis;
+    if (msg.fuse_dis !== undefined) {
+      resolved.fuse_dis = msg.fuse_dis;
     }
     else {
-      resolved.est_dis = 0.0
+      resolved.fuse_dis = 0.0
     }
 
     return resolved;

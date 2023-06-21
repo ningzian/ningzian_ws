@@ -31,7 +31,7 @@ struct iuslTarState_
     , tar_z(0.0)
     , tar_vx(0.0)
     , tar_vy(0.0)
-    , est_dis(0.0)  {
+    , fuse_dis(0.0)  {
     }
   iuslTarState_(const ContainerAllocator& _alloc)
     : tar_OK(false)
@@ -41,7 +41,7 @@ struct iuslTarState_
     , tar_z(0.0)
     , tar_vx(0.0)
     , tar_vy(0.0)
-    , est_dis(0.0)  {
+    , fuse_dis(0.0)  {
   (void)_alloc;
     }
 
@@ -68,8 +68,8 @@ struct iuslTarState_
    typedef double _tar_vy_type;
   _tar_vy_type tar_vy;
 
-   typedef double _est_dis_type;
-  _est_dis_type est_dis;
+   typedef double _fuse_dis_type;
+  _fuse_dis_type fuse_dis;
 
 
 
@@ -149,12 +149,12 @@ struct MD5Sum< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "fa6098269c9336e18e8e70250407c05a";
+    return "b55949212e6e57bd4195732ade60e369";
   }
 
   static const char* value(const ::dji_osdk_ros::iuslTarState_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0xfa6098269c9336e1ULL;
-  static const uint64_t static_value2 = 0x8e8e70250407c05aULL;
+  static const uint64_t static_value1 = 0xb55949212e6e57bdULL;
+  static const uint64_t static_value2 = 0x4195732ade60e369ULL;
 };
 
 template<class ContainerAllocator>
@@ -174,6 +174,7 @@ struct Definition< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
   static const char* value()
   {
     return "# estimated target UAV state\n\
+\n\
 bool tar_OK\n\
 bool is_laser_measured\n\
 \n\
@@ -183,7 +184,7 @@ float64 tar_z\n\
 float64 tar_vx\n\
 float64 tar_vy\n\
 \n\
-float64 est_dis\n\
+float64 fuse_dis\n\
 \n\
 ";
   }
@@ -210,7 +211,7 @@ namespace serialization
       stream.next(m.tar_z);
       stream.next(m.tar_vx);
       stream.next(m.tar_vy);
-      stream.next(m.est_dis);
+      stream.next(m.fuse_dis);
     }
 
     ROS_DECLARE_ALLINONE_SERIALIZER
@@ -243,8 +244,8 @@ struct Printer< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
     Printer<double>::stream(s, indent + "  ", v.tar_vx);
     s << indent << "tar_vy: ";
     Printer<double>::stream(s, indent + "  ", v.tar_vy);
-    s << indent << "est_dis: ";
-    Printer<double>::stream(s, indent + "  ", v.est_dis);
+    s << indent << "fuse_dis: ";
+    Printer<double>::stream(s, indent + "  ", v.fuse_dis);
   }
 };
 

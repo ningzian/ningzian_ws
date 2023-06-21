@@ -13,6 +13,6 @@
           TAR_VX
           TAR_VY-VAL
           TAR_VY
-          EST_DIS-VAL
-          EST_DIS
+          FUSE_DIS-VAL
+          FUSE_DIS
 ))

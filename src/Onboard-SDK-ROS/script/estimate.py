@@ -94,7 +94,7 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     measure_max_length = msg.max_length
     cam_f = 0.0045  # for 1536x864
     cam_s = 0.000004093  # for 1536x864
-    if abs(dx) < measure_max_length/2 and abs(dy) < measure_max_length/3 and measure_laser_dis < 20 and measure_laser_dis > 2:
+    if abs(dx) < measure_max_length/2 and abs(dy) < measure_max_length/2 and measure_laser_dis < 18 and measure_laser_dis > 2:
       fuse_dis = measure_laser_dis
       est_UAV_real_length = measure_laser_dis * measure_max_length * cam_s / cam_f
       kf_R_original[3, 3] = 0.000001
@@ -193,7 +193,7 @@ img_detection_result = iuslDetectionResult()
 pos_my = np.zeros([3, 1])  # 自己相机的全局位置坐标
 
 est_kf_OK = False
-est_direction_g_bar = zeros(3, 1)       # 预处理得到的观测信息
+est_direction_g_bar = np.zeros([3, 1])       # 预处理得到的观测信息
 fuse_dis = 0.
 kf_estimated_state = np.array([[0],[0],[0], [0], [0], [0]])    # initial state
 
@@ -231,7 +231,7 @@ rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_reci
 est_tar_state_publisher = rospy.Publisher('/iusl_ros/estimate_tar_state', iuslTarState, queue_size=5)
 mobileBox_publisher = rospy.Publisher('/iusl_ros/mobile_box', Int32MultiArray, queue_size=5)
 
-
+time_now = rospy.Time.now().to_sec()
 while True:
   # rosbag
   if (not bag_start) and ground_mission_cmd:
@@ -242,12 +242,20 @@ while True:
     bag_start = False
     bag_est_tar_state.close()
     bag_img_detect_result.close()
-    
   
+  # calculate dt
+  time_tem = rospy.Time.now().to_sec()
+  dt = time_tem - time_now
+  time_now = time_tem
+  if dt < 0.02:
+    dt = 0.02
+  kf_F[0, 3] = dt
+  kf_F[1, 4] = dt
+  kf_F[2, 5] = dt
 
   # calculate duration, for plkf reinit 
-  time_now = rospy.Time.now()
-  dt = (time_now - measure_time_stamp).to_sec()
+  time_now = rospy.Time.now().to_sec()
+  dt = time_now - img_detection_result.time
   if dt > 6:
     est_kf_OK = False
     kf_P = np.zeros([6, 6])
@@ -260,7 +268,7 @@ while True:
     kf_R_original[3, 3] = 0.1
     
   # if there is a new measurment, do all PLKF steps
-  if ground_mission_cmd and (not auto_fire_cmd):
+  if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd):
     if measure_is_new: 
       measure_is_new = False
       # calculate mear state

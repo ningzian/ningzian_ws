@@ -18,58 +18,94 @@ class iuslMyState {
   constructor(initObj={}) {
     if (initObj === null) {
       // initObj === null is a special case for deserialization where we don't initialize fields
-      this.my_UAV_x = null;
-      this.my_UAV_y = null;
-      this.my_UAV_z = null;
-      this.my_UAV_vx = null;
-      this.my_UAV_vy = null;
+      this.UAV_lat = null;
+      this.UAV_lon = null;
+      this.UAV_alt = null;
+      this.UAV_yaw = null;
+      this.UAV_vx = null;
+      this.UAV_vy = null;
+      this.cam_x = null;
+      this.cam_y = null;
+      this.cam_z = null;
     }
     else {
-      if (initObj.hasOwnProperty('my_UAV_x')) {
-        this.my_UAV_x = initObj.my_UAV_x
+      if (initObj.hasOwnProperty('UAV_lat')) {
+        this.UAV_lat = initObj.UAV_lat
       }
       else {
-        this.my_UAV_x = 0.0;
+        this.UAV_lat = 0.0;
       }
-      if (initObj.hasOwnProperty('my_UAV_y')) {
-        this.my_UAV_y = initObj.my_UAV_y
-      }
-      else {
-        this.my_UAV_y = 0.0;
-      }
-      if (initObj.hasOwnProperty('my_UAV_z')) {
-        this.my_UAV_z = initObj.my_UAV_z
+      if (initObj.hasOwnProperty('UAV_lon')) {
+        this.UAV_lon = initObj.UAV_lon
       }
       else {
-        this.my_UAV_z = 0.0;
+        this.UAV_lon = 0.0;
       }
-      if (initObj.hasOwnProperty('my_UAV_vx')) {
-        this.my_UAV_vx = initObj.my_UAV_vx
-      }
-      else {
-        this.my_UAV_vx = 0.0;
-      }
-      if (initObj.hasOwnProperty('my_UAV_vy')) {
-        this.my_UAV_vy = initObj.my_UAV_vy
+      if (initObj.hasOwnProperty('UAV_alt')) {
+        this.UAV_alt = initObj.UAV_alt
       }
       else {
-        this.my_UAV_vy = 0.0;
+        this.UAV_alt = 0.0;
+      }
+      if (initObj.hasOwnProperty('UAV_yaw')) {
+        this.UAV_yaw = initObj.UAV_yaw
+      }
+      else {
+        this.UAV_yaw = 0.0;
+      }
+      if (initObj.hasOwnProperty('UAV_vx')) {
+        this.UAV_vx = initObj.UAV_vx
+      }
+      else {
+        this.UAV_vx = 0.0;
+      }
+      if (initObj.hasOwnProperty('UAV_vy')) {
+        this.UAV_vy = initObj.UAV_vy
+      }
+      else {
+        this.UAV_vy = 0.0;
+      }
+      if (initObj.hasOwnProperty('cam_x')) {
+        this.cam_x = initObj.cam_x
+      }
+      else {
+        this.cam_x = 0.0;
+      }
+      if (initObj.hasOwnProperty('cam_y')) {
+        this.cam_y = initObj.cam_y
+      }
+      else {
+        this.cam_y = 0.0;
+      }
+      if (initObj.hasOwnProperty('cam_z')) {
+        this.cam_z = initObj.cam_z
+      }
+      else {
+        this.cam_z = 0.0;
       }
     }
   }
 
   static serialize(obj, buffer, bufferOffset) {
     // Serializes a message object of type iuslMyState
-    // Serialize message field [my_UAV_x]
-    bufferOffset = _serializer.float64(obj.my_UAV_x, buffer, bufferOffset);
-    // Serialize message field [my_UAV_y]
-    bufferOffset = _serializer.float64(obj.my_UAV_y, buffer, bufferOffset);
-    // Serialize message field [my_UAV_z]
-    bufferOffset = _serializer.float64(obj.my_UAV_z, buffer, bufferOffset);
-    // Serialize message field [my_UAV_vx]
-    bufferOffset = _serializer.float64(obj.my_UAV_vx, buffer, bufferOffset);
-    // Serialize message field [my_UAV_vy]
-    bufferOffset = _serializer.float64(obj.my_UAV_vy, buffer, bufferOffset);
+    // Serialize message field [UAV_lat]
+    bufferOffset = _serializer.float64(obj.UAV_lat, buffer, bufferOffset);
+    // Serialize message field [UAV_lon]
+    bufferOffset = _serializer.float64(obj.UAV_lon, buffer, bufferOffset);
+    // Serialize message field [UAV_alt]
+    bufferOffset = _serializer.float64(obj.UAV_alt, buffer, bufferOffset);
+    // Serialize message field [UAV_yaw]
+    bufferOffset = _serializer.float64(obj.UAV_yaw, buffer, bufferOffset);
+    // Serialize message field [UAV_vx]
+    bufferOffset = _serializer.float64(obj.UAV_vx, buffer, bufferOffset);
+    // Serialize message field [UAV_vy]
+    bufferOffset = _serializer.float64(obj.UAV_vy, buffer, bufferOffset);
+    // Serialize message field [cam_x]
+    bufferOffset = _serializer.float64(obj.cam_x, buffer, bufferOffset);
+    // Serialize message field [cam_y]
+    bufferOffset = _serializer.float64(obj.cam_y, buffer, bufferOffset);
+    // Serialize message field [cam_z]
+    bufferOffset = _serializer.float64(obj.cam_z, buffer, bufferOffset);
     return bufferOffset;
   }
 
@@ -77,21 +113,29 @@ class iuslMyState {
     //deserializes a message object of type iuslMyState
     let len;
     let data = new iuslMyState(null);
-    // Deserialize message field [my_UAV_x]
-    data.my_UAV_x = _deserializer.float64(buffer, bufferOffset);
-    // Deserialize message field [my_UAV_y]
-    data.my_UAV_y = _deserializer.float64(buffer, bufferOffset);
-    // Deserialize message field [my_UAV_z]
-    data.my_UAV_z = _deserializer.float64(buffer, bufferOffset);
-    // Deserialize message field [my_UAV_vx]
-    data.my_UAV_vx = _deserializer.float64(buffer, bufferOffset);
-    // Deserialize message field [my_UAV_vy]
-    data.my_UAV_vy = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [UAV_lat]
+    data.UAV_lat = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [UAV_lon]
+    data.UAV_lon = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [UAV_alt]
+    data.UAV_alt = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [UAV_yaw]
+    data.UAV_yaw = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [UAV_vx]
+    data.UAV_vx = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [UAV_vy]
+    data.UAV_vy = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [cam_x]
+    data.cam_x = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [cam_y]
+    data.cam_y = _deserializer.float64(buffer, bufferOffset);
+    // Deserialize message field [cam_z]
+    data.cam_z = _deserializer.float64(buffer, bufferOffset);
     return data;
   }
 
   static getMessageSize(object) {
-    return 40;
+    return 72;
   }
 
   static datatype() {
@@ -101,17 +145,22 @@ class iuslMyState {
 
   static md5sum() {
     //Returns md5sum for a message object
-    return '300d4f75ca62584d1d351cb6e7c982b6';
+    return 'acb74560be271ca4b46ca1a39952dd6b';
   }
 
   static messageDefinition() {
     // Returns full string definition for message
     return `
-    float64 my_UAV_x
-    float64 my_UAV_y
-    float64 my_UAV_z
-    float64 my_UAV_vx
-    float64 my_UAV_vy
+    float64 UAV_lat
+    float64 UAV_lon
+    float64 UAV_alt
+    float64 UAV_yaw
+    float64 UAV_vx
+    float64 UAV_vy
+    float64 cam_x
+    float64 cam_y
+    float64 cam_z
+    
     
     `;
   }
@@ -122,39 +171,67 @@ class iuslMyState {
       msg = {};
     }
     const resolved = new iuslMyState(null);
-    if (msg.my_UAV_x !== undefined) {
-      resolved.my_UAV_x = msg.my_UAV_x;
+    if (msg.UAV_lat !== undefined) {
+      resolved.UAV_lat = msg.UAV_lat;
     }
     else {
-      resolved.my_UAV_x = 0.0
+      resolved.UAV_lat = 0.0
     }
 
-    if (msg.my_UAV_y !== undefined) {
-      resolved.my_UAV_y = msg.my_UAV_y;
+    if (msg.UAV_lon !== undefined) {
+      resolved.UAV_lon = msg.UAV_lon;
     }
     else {
-      resolved.my_UAV_y = 0.0
+      resolved.UAV_lon = 0.0
     }
 
-    if (msg.my_UAV_z !== undefined) {
-      resolved.my_UAV_z = msg.my_UAV_z;
+    if (msg.UAV_alt !== undefined) {
+      resolved.UAV_alt = msg.UAV_alt;
     }
     else {
-      resolved.my_UAV_z = 0.0
+      resolved.UAV_alt = 0.0
     }
 
-    if (msg.my_UAV_vx !== undefined) {
-      resolved.my_UAV_vx = msg.my_UAV_vx;
+    if (msg.UAV_yaw !== undefined) {
+      resolved.UAV_yaw = msg.UAV_yaw;
     }
     else {
-      resolved.my_UAV_vx = 0.0
+      resolved.UAV_yaw = 0.0
     }
 
-    if (msg.my_UAV_vy !== undefined) {
-      resolved.my_UAV_vy = msg.my_UAV_vy;
+    if (msg.UAV_vx !== undefined) {
+      resolved.UAV_vx = msg.UAV_vx;
     }
     else {
-      resolved.my_UAV_vy = 0.0
+      resolved.UAV_vx = 0.0
+    }
+
+    if (msg.UAV_vy !== undefined) {
+      resolved.UAV_vy = msg.UAV_vy;
+    }
+    else {
+      resolved.UAV_vy = 0.0
+    }
+
+    if (msg.cam_x !== undefined) {
+      resolved.cam_x = msg.cam_x;
+    }
+    else {
+      resolved.cam_x = 0.0
+    }
+
+    if (msg.cam_y !== undefined) {
+      resolved.cam_y = msg.cam_y;
+    }
+    else {
+      resolved.cam_y = 0.0
+    }
+
+    if (msg.cam_z !== undefined) {
+      resolved.cam_z = msg.cam_z;
+    }
+    else {
+      resolved.cam_z = 0.0
     }
 
     return resolved;

@@ -42,9 +42,9 @@
     :initarg :tar_vy
     :type cl:float
     :initform 0.0)
-   (est_dis
-    :reader est_dis
-    :initarg :est_dis
+   (fuse_dis
+    :reader fuse_dis
+    :initarg :fuse_dis
     :type cl:float
     :initform 0.0))
 )
@@ -92,10 +92,10 @@
   (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader dji_osdk_ros-msg:tar_vy-val is deprecated.  Use dji_osdk_ros-msg:tar_vy instead.")
   (tar_vy m))
 
-(cl:ensure-generic-function 'est_dis-val :lambda-list '(m))
-(cl:defmethod est_dis-val ((m <iuslTarState>))
-  (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader dji_osdk_ros-msg:est_dis-val is deprecated.  Use dji_osdk_ros-msg:est_dis instead.")
-  (est_dis m))
+(cl:ensure-generic-function 'fuse_dis-val :lambda-list '(m))
+(cl:defmethod fuse_dis-val ((m <iuslTarState>))
+  (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader dji_osdk_ros-msg:fuse_dis-val is deprecated.  Use dji_osdk_ros-msg:fuse_dis instead.")
+  (fuse_dis m))
 (cl:defmethod roslisp-msg-protocol:serialize ((msg <iuslTarState>) ostream)
   "Serializes a message object of type '<iuslTarState>"
   (cl:write-byte (cl:ldb (cl:byte 8 0) (cl:if (cl:slot-value msg 'tar_OK) 1 0)) ostream)
@@ -145,7 +145,7 @@
     (cl:write-byte (cl:ldb (cl:byte 8 40) bits) ostream)
     (cl:write-byte (cl:ldb (cl:byte 8 48) bits) ostream)
     (cl:write-byte (cl:ldb (cl:byte 8 56) bits) ostream))
-  (cl:let ((bits (roslisp-utils:encode-double-float-bits (cl:slot-value msg 'est_dis))))
+  (cl:let ((bits (roslisp-utils:encode-double-float-bits (cl:slot-value msg 'fuse_dis))))
     (cl:write-byte (cl:ldb (cl:byte 8 0) bits) ostream)
     (cl:write-byte (cl:ldb (cl:byte 8 8) bits) ostream)
     (cl:write-byte (cl:ldb (cl:byte 8 16) bits) ostream)
@@ -218,7 +218,7 @@
       (cl:setf (cl:ldb (cl:byte 8 40) bits) (cl:read-byte istream))
       (cl:setf (cl:ldb (cl:byte 8 48) bits) (cl:read-byte istream))
       (cl:setf (cl:ldb (cl:byte 8 56) bits) (cl:read-byte istream))
-    (cl:setf (cl:slot-value msg 'est_dis) (roslisp-utils:decode-double-float-bits bits)))
+    (cl:setf (cl:slot-value msg 'fuse_dis) (roslisp-utils:decode-double-float-bits bits)))
   msg
 )
 (cl:defmethod roslisp-msg-protocol:ros-datatype ((msg (cl:eql '<iuslTarState>)))
@@ -229,16 +229,16 @@
   "dji_osdk_ros/iuslTarState")
 (cl:defmethod roslisp-msg-protocol:md5sum ((type (cl:eql '<iuslTarState>)))
   "Returns md5sum for a message object of type '<iuslTarState>"
-  "fa6098269c9336e18e8e70250407c05a")
+  "b55949212e6e57bd4195732ade60e369")
 (cl:defmethod roslisp-msg-protocol:md5sum ((type (cl:eql 'iuslTarState)))
   "Returns md5sum for a message object of type 'iuslTarState"
-  "fa6098269c9336e18e8e70250407c05a")
+  "b55949212e6e57bd4195732ade60e369")
 (cl:defmethod roslisp-msg-protocol:message-definition ((type (cl:eql '<iuslTarState>)))
   "Returns full string definition for message of type '<iuslTarState>"
-  (cl:format cl:nil "# estimated target UAV state~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 est_dis~%~%~%~%"))
+  (cl:format cl:nil "# estimated target UAV state~%~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 fuse_dis~%~%~%~%"))
 (cl:defmethod roslisp-msg-protocol:message-definition ((type (cl:eql 'iuslTarState)))
   "Returns full string definition for message of type 'iuslTarState"
-  (cl:format cl:nil "# estimated target UAV state~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 est_dis~%~%~%~%"))
+  (cl:format cl:nil "# estimated target UAV state~%~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 fuse_dis~%~%~%~%"))
 (cl:defmethod roslisp-msg-protocol:serialization-length ((msg <iuslTarState>))
   (cl:+ 0
      1
@@ -260,5 +260,5 @@
     (cl:cons ':tar_z (tar_z msg))
     (cl:cons ':tar_vx (tar_vx msg))
     (cl:cons ':tar_vy (tar_vy msg))
-    (cl:cons ':est_dis (est_dis msg))
+    (cl:cons ':fuse_dis (fuse_dis msg))
 ))

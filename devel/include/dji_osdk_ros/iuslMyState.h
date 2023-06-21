@@ -24,37 +24,57 @@ struct iuslMyState_
   typedef iuslMyState_<ContainerAllocator> Type;
 
   iuslMyState_()
-    : my_UAV_x(0.0)
-    , my_UAV_y(0.0)
-    , my_UAV_z(0.0)
-    , my_UAV_vx(0.0)
-    , my_UAV_vy(0.0)  {
+    : UAV_lat(0.0)
+    , UAV_lon(0.0)
+    , UAV_alt(0.0)
+    , UAV_yaw(0.0)
+    , UAV_vx(0.0)
+    , UAV_vy(0.0)
+    , cam_x(0.0)
+    , cam_y(0.0)
+    , cam_z(0.0)  {
     }
   iuslMyState_(const ContainerAllocator& _alloc)
-    : my_UAV_x(0.0)
-    , my_UAV_y(0.0)
-    , my_UAV_z(0.0)
-    , my_UAV_vx(0.0)
-    , my_UAV_vy(0.0)  {
+    : UAV_lat(0.0)
+    , UAV_lon(0.0)
+    , UAV_alt(0.0)
+    , UAV_yaw(0.0)
+    , UAV_vx(0.0)
+    , UAV_vy(0.0)
+    , cam_x(0.0)
+    , cam_y(0.0)
+    , cam_z(0.0)  {
   (void)_alloc;
     }
 
 
 
-   typedef double _my_UAV_x_type;
-  _my_UAV_x_type my_UAV_x;
+   typedef double _UAV_lat_type;
+  _UAV_lat_type UAV_lat;
 
-   typedef double _my_UAV_y_type;
-  _my_UAV_y_type my_UAV_y;
+   typedef double _UAV_lon_type;
+  _UAV_lon_type UAV_lon;
 
-   typedef double _my_UAV_z_type;
-  _my_UAV_z_type my_UAV_z;
+   typedef double _UAV_alt_type;
+  _UAV_alt_type UAV_alt;
 
-   typedef double _my_UAV_vx_type;
-  _my_UAV_vx_type my_UAV_vx;
+   typedef double _UAV_yaw_type;
+  _UAV_yaw_type UAV_yaw;
 
-   typedef double _my_UAV_vy_type;
-  _my_UAV_vy_type my_UAV_vy;
+   typedef double _UAV_vx_type;
+  _UAV_vx_type UAV_vx;
+
+   typedef double _UAV_vy_type;
+  _UAV_vy_type UAV_vy;
+
+   typedef double _cam_x_type;
+  _cam_x_type cam_x;
+
+   typedef double _cam_y_type;
+  _cam_y_type cam_y;
+
+   typedef double _cam_z_type;
+  _cam_z_type cam_z;
 
 
 
@@ -134,12 +154,12 @@ struct MD5Sum< ::dji_osdk_ros::iuslMyState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "300d4f75ca62584d1d351cb6e7c982b6";
+    return "acb74560be271ca4b46ca1a39952dd6b";
   }
 
   static const char* value(const ::dji_osdk_ros::iuslMyState_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0x300d4f75ca62584dULL;
-  static const uint64_t static_value2 = 0x1d351cb6e7c982b6ULL;
+  static const uint64_t static_value1 = 0xacb74560be271ca4ULL;
+  static const uint64_t static_value2 = 0xb46ca1a39952dd6bULL;
 };
 
 template<class ContainerAllocator>
@@ -158,11 +178,16 @@ struct Definition< ::dji_osdk_ros::iuslMyState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "float64 my_UAV_x\n\
-float64 my_UAV_y\n\
-float64 my_UAV_z\n\
-float64 my_UAV_vx\n\
-float64 my_UAV_vy\n\
+    return "float64 UAV_lat\n\
+float64 UAV_lon\n\
+float64 UAV_alt\n\
+float64 UAV_yaw\n\
+float64 UAV_vx\n\
+float64 UAV_vy\n\
+float64 cam_x\n\
+float64 cam_y\n\
+float64 cam_z\n\
+\n\
 ";
   }
 
@@ -181,11 +206,15 @@ namespace serialization
   {
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
-      stream.next(m.my_UAV_x);
-      stream.next(m.my_UAV_y);
-      stream.next(m.my_UAV_z);
-      stream.next(m.my_UAV_vx);
-      stream.next(m.my_UAV_vy);
+      stream.next(m.UAV_lat);
+      stream.next(m.UAV_lon);
+      stream.next(m.UAV_alt);
+      stream.next(m.UAV_yaw);
+      stream.next(m.UAV_vx);
+      stream.next(m.UAV_vy);
+      stream.next(m.cam_x);
+      stream.next(m.cam_y);
+      stream.next(m.cam_z);
     }
 
     ROS_DECLARE_ALLINONE_SERIALIZER
@@ -204,16 +233,24 @@ struct Printer< ::dji_osdk_ros::iuslMyState_<ContainerAllocator> >
 {
   template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::dji_osdk_ros::iuslMyState_<ContainerAllocator>& v)
   {
-    s << indent << "my_UAV_x: ";
-    Printer<double>::stream(s, indent + "  ", v.my_UAV_x);
-    s << indent << "my_UAV_y: ";
-    Printer<double>::stream(s, indent + "  ", v.my_UAV_y);
-    s << indent << "my_UAV_z: ";
-    Printer<double>::stream(s, indent + "  ", v.my_UAV_z);
-    s << indent << "my_UAV_vx: ";
-    Printer<double>::stream(s, indent + "  ", v.my_UAV_vx);
-    s << indent << "my_UAV_vy: ";
-    Printer<double>::stream(s, indent + "  ", v.my_UAV_vy);
+    s << indent << "UAV_lat: ";
+    Printer<double>::stream(s, indent + "  ", v.UAV_lat);
+    s << indent << "UAV_lon: ";
+    Printer<double>::stream(s, indent + "  ", v.UAV_lon);
+    s << indent << "UAV_alt: ";
+    Printer<double>::stream(s, indent + "  ", v.UAV_alt);
+    s << indent << "UAV_yaw: ";
+    Printer<double>::stream(s, indent + "  ", v.UAV_yaw);
+    s << indent << "UAV_vx: ";
+    Printer<double>::stream(s, indent + "  ", v.UAV_vx);
+    s << indent << "UAV_vy: ";
+    Printer<double>::stream(s, indent + "  ", v.UAV_vy);
+    s << indent << "cam_x: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_x);
+    s << indent << "cam_y: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_y);
+    s << indent << "cam_z: ";
+    Printer<double>::stream(s, indent + "  ", v.cam_z);
   }
 };
 
