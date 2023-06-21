@@ -31,6 +31,11 @@ from dji_osdk_ros.srv import ObtainControlAuthority
 # ==========================================================================================
 # ====================== receive msg call back =============================================
 # ==========================================================================================
+# 接收地面站的指令
+def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行任务
+  global ground_mission_cmd
+  ground_mission_cmd = msg.data
+  return
 
 # 接收home信息
 def callback_recive_home_rtk(msg):            
@@ -103,7 +108,6 @@ def callback_recive_rtkpos(msg):
     UAV_z = home_alt - UAV_alt
     # 计算相机的全局位置 pos_my
     cam_x_now, cam_y_now, cam_z_now = calculate_cam_pos(UAV_lat_now, UAV_lon_now, UAV_alt_now, home_lat, home_lon, home_alt, UAV_yaw_now)
-
   return
 
 # 接收检测框的信息，用于判断是否打网
@@ -277,6 +281,10 @@ est_tar_vx = 0.
 est_tar_vy = 0.
 est_fuse_dis = 0.
 
+bag_start = False
+ground_mission_cmd = False
+auto_fire_cmd = False
+
 
 # ==========================================================================================
 # =================================== main =================================================
@@ -286,17 +294,21 @@ rospy.init_node('control', anonymous=True)
 rate = rospy.Rate(50)
 
 # sub msg 
+# sub msg for ground_cmd
+rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)
+# sub msg for 自己的飞行状态
 rospy.Subscriber('/iusl_ros/home_rtk', NavSatFix, callback_recive_home_rtk) 
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 rospy.Subscriber('dji_osdk_ros/rtk_velocity', Vector3Stamped, callback_recive_rtkvel)         # my rtk vel
 rospy.Subscriber('/dji_osdk_ros/rtk_yaw', Int16, callback_recive_rtkYaw) 
 rospy.Subscriber('dji_osdk_ros/attitude', callback_UAV_attitude)
 rospy.Subscriber('dji_osdk_ros/gimbal_angle', Vector3Stamped, callback_recive_gimbal_angle)
+# sub msg for 估计节点和视觉探测节点
 rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
 rospy.Subscriber('/iusl_ros/estimate_tar_state', iuslTarState, callback_receive_est_tar)
 
-
-
+# pub msg
+auto_fire_cmd_publisher = rospy.Publisher('iusl_ros/auto_fire', Bool, queue_size = 5)
 
 # 获取控制权限
 rospy.wait_for_service('obtain_release_control_authority')
@@ -306,4 +318,21 @@ Obtain_control = True
 
 # 开始循环
 while True:
+  # bag 的开始和结束
+  if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+    bag_start = False
+  elif (not bag_start) and ground_mission_cmd:
+    bag_
+    bag_start = True
+
+  # bag 保存
+  if bag_start:
+    bag_est_tar_state.write('/iusl_bag/estimate_tar_state', est_tar_state)
+    bag_img_detect_result.write('/iusl_bag/img_detect_result', img_detection_result)
+  rate.sleep()
+
+
+
+
+
 

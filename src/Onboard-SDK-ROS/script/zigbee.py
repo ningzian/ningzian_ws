@@ -1,13 +1,6 @@
 #! /usr/bin/env python
 # coding=utf-8
 
-"""
-功能：
-  - zigbee接收地面站的cmd，发送给控制节点用于开始跟踪，发送给其他节点用于bag保存
-  - 接收控制节点的发射网枪指令，用zigbee发送给地面站是否auto fire
-bag保存：（保存从 ground_mission_start 到 auto_fire 时间段内的bag信息）
-  - 地面站指令
-"""
 
 import rospy
 import rosbag
@@ -20,7 +13,7 @@ from decimal import Decimal
 from dji_osdk_ros.msg import iuslTarState
 from sensor_msgs.msg import NavSatFix     # rtk pos，记录home点的经纬度和海拔
 from std_msgs.msg import Int16            # rtk yaw
-from std_msgs.msg import UInt8            # ground mission cmd, flight state
+from std_msgs.msg import UInt8            # flight state
 from std_msgs.msg import Bool             # auto fire
 
 # ==================================================================================
@@ -43,11 +36,17 @@ def callback_autofire_cmd(msg):
 
 #   接收RTK的经纬度和海拔，
 def callback_recive_rtkpos(msg):             # update my UAV pos
+  # for msg pub
   global home_rtk_publisher
   global home_rtk_num
+  # for ros bag
+  global bag_start
+  global bag_home_rtk
   if (home_rtk_num < 20) and (max(msg.position_covariance) < 0.02) and (msg.altitude > 0.5):
     home_rtk_publisher.publish(msg)
     home_rtk_num += 1
+  if bag_start:
+    bag_home_rtk.write('/iusl_bag/home_rtk', msg)
   return
 
 
@@ -100,7 +99,7 @@ rate = rospy.Rate(50)
 rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 # pub msg 
-ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', UInt8, queue_size=3)
+ground_mission_cmd_publisher = rospy.Publisher('/iusl_ros/ground_mission_cmd', Bool, queue_size=3)
 home_rtk_publisher = rospy.Publisher('/iusl_ros/home_rtk', NavSatFix, queue_size = 10)
 
 # 网枪复位0xFF, 0x02, 0x00, 0xF4, 0x01
@@ -109,12 +108,13 @@ netgun_serial.write(send_data)
 
 while True:
   # rosbag 
-  #if bag_start and auto_fire_cmd:
-  #  bag_ground_cmd.close()
-  #  bag_start = False
-  #if (not bag_start) and ground_mission_start:
-  #  bag_ground_cmd = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'ground_cmd.bag', 'w')
-  #  bag_start = True
+  # bag 的开始和结束
+  if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+    bag_home_rtk.close()
+    bag_start = False
+  elif (not bag_start) and ground_mission_cmd:
+    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk', 'w')
+    bag_start = True
 
   # zigbee receive, receive from ground station: misssion cmd
   data_tem = zigbee_serial.read(1)
@@ -128,15 +128,12 @@ while True:
     zigbee_serial.reset_input_buffer()
     if sourceID == 1:    # from ground station
       if num == 1:
-        ground_mission_cmd = data[0]
+        ground_mission_data = data[0]
+        if ground_mission_data > 0.5:
+          ground_mission_cmd = True
+        elif ground_mission_data < 0.5:
+          ground_mission_cmd = False
         ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd
-        #if bag_start:
-        #  bag_ground_cmd.write('/iusl_bag/ground_cmd', ground_mission_cmd)
-        # 更新 ground_mission_start
-        if ground_mission_cmd > 0.5 and ground_mission_cmd < 1.5:
-          ground_mission_start = True
-        else:
-          ground_mission_start = False
 
   # end receive zigbee data
   rate.sleep()

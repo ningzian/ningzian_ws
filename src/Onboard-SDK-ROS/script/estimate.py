@@ -112,12 +112,10 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
 
   return
 
-def callback_update_ground_cmd(msg): # 1 start mission, 2 pause mission, 3 go home
-  global ground_mission_start
-  if msg.data > 0.5 and msg.data < 1.5:
-    ground_mission_start = True
-  else:
-    ground_mission_start = False
+# 接收地面站的指令
+def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行任务
+  global ground_mission_cmd
+  ground_mission_cmd = msg.data
   return
 
 # 接收发射网枪的指令，用于bag的中断保存
@@ -185,7 +183,7 @@ kf_P[4, 4] = 0.1
 kf_P[5, 5] = 0.1
 
 # ----------------  updated states  ---------------------
-ground_mission_start = False      # 有没有在执行任务
+ground_mission_cmd = False      # 有没有在执行任务
 auto_fire_cmd = False
 bag_start = False
 
@@ -226,9 +224,10 @@ rate = rospy.Rate(50)
 
 # sub msg 
 rospy.Subscriber('/iusl_ros/home_rtk', NavSatFix, callback_recive_home_rtk)
-rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
-rospy.Subscriber('/iusl_ros/ground_mission_cmd', UInt8, callback_update_ground_cmd)
+rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)
 rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
+rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
+
 
 
 # pub msg 
@@ -238,11 +237,11 @@ mobileBox_publisher = rospy.Publisher('/iusl_ros/mobile_box', Int32MultiArray, q
 
 while True:
   # rosbag 
-  if bag_start and auto_fire_cmd:
+  if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
     bag_est_tar_state.close()
     bag_img_detect_result.close()
     bag_start = False
-  if (not bag_start) and ground_mission_start:
+  if (not bag_start) and ground_mission_cmd:
     bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
     bag_img_detect_result = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'img_detect_result', 'w')
     bag_start = True
@@ -262,7 +261,7 @@ while True:
     kf_R_original[3, 3] = 0.1
     
   # if there is a new measurment, do all PLKF steps
-  if ground_mission_start:
+  if ground_mission_cmd:
     if measure_is_new: 
       measure_is_new = False
       # calculate mear state
@@ -304,7 +303,7 @@ while True:
     est_tar_state.tar_vy = ekf_estimated_state[4,0]
     est_tar_state.fuse_dis = fuse_dis
     est_tar_state_publisher.publish(est_tar_state)
-  # end if ground_mission_start
+  # end if ground_mission_cmd
 
   if bag_start:
     bag_est_tar_state.write('/iusl_bag/estimate_tar_state', est_tar_state)
