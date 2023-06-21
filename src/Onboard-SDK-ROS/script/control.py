@@ -328,14 +328,15 @@ Obtain_control = True
 # 开始循环
 while True:
   # bag 的开始和结束
-  if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+  if (not bag_start) and ground_mission_cmd:
+    bag_start = True
+    bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
+    #bag_my_control_cmd = rosbag.Bag('home/dji/bigDisk/bag' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_control_cmd', 'w')
+  elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
     bag_start = False
     bag_my_state.close()
     #bag_my_control_cmd.close()
-  elif (not bag_start) and ground_mission_cmd:
-    bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
-    #bag_my_control_cmd = rosbag.Bag('home/dji/bigDisk/bag' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_control_cmd', 'w')
-    bag_start = True
+  
   
   # 控制自己的飞行
   if ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:

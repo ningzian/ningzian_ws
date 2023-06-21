@@ -233,15 +233,17 @@ mobileBox_publisher = rospy.Publisher('/iusl_ros/mobile_box', Int32MultiArray, q
 
 
 while True:
-  # rosbag 
-  if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
-    bag_est_tar_state.close()
-    bag_img_detect_result.close()
-    bag_start = False
+  # rosbag
   if (not bag_start) and ground_mission_cmd:
+    bag_start = True 
     bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
     bag_img_detect_result = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'img_detect_result', 'w')
-    bag_start = True
+  elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+    bag_start = False
+    bag_est_tar_state.close()
+    bag_img_detect_result.close()
+    
+  
 
   # calculate duration, for plkf reinit 
   time_now = rospy.Time.now()

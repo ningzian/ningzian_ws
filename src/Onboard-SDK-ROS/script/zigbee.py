@@ -109,12 +109,13 @@ netgun_serial.write(send_data)
 while True:
   # rosbag 
   # bag 的开始和结束
-  if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
-    bag_home_rtk.close()
-    bag_start = False
-  elif (not bag_start) and ground_mission_cmd:
-    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk', 'w')
+  if (not bag_start) and ground_mission_cmd:
     bag_start = True
+    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk', 'w')
+  elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+    bag_start = False
+    bag_home_rtk.close()
+    
 
   # zigbee receive, receive from ground station: misssion cmd
   data_tem = zigbee_serial.read(1)
