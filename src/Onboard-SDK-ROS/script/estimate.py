@@ -121,10 +121,7 @@ def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行
 # 接收发射网枪的指令，用于bag的中断保存
 def callback_autofire_cmd(msg):
   global auto_fire_cmd
-  if msg.data:
-    auto_fire_cmd = True
-  else:
-    auto_fire_cmd = False
+  auto_fire_cmd = msg
   return
 
 
@@ -261,7 +258,7 @@ while True:
     kf_R_original[3, 3] = 0.1
     
   # if there is a new measurment, do all PLKF steps
-  if ground_mission_cmd:
+  if ground_mission_cmd and (not auto_fire_cmd):
     if measure_is_new: 
       measure_is_new = False
       # calculate mear state
@@ -295,7 +292,7 @@ while True:
       if est_kf_OK:
         kf_estimated_state = np.dot(kf_F, kf_estimated_state)
     # ----------- pub ---------------
-    est_tar_state.tar_OK = est_ekf_OK
+    est_tar_state.tar_OK = est_kf_OK
     est_tar_state.tar_x = ekf_estimated_state[0,0]
     est_tar_state.tar_y = ekf_estimated_state[1,0]
     est_tar_state.tar_z = ekf_estimated_state[2,0]

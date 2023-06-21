@@ -285,6 +285,14 @@ bag_start = False
 ground_mission_cmd = False
 auto_fire_cmd = False
 
+iuslUAVCtrlCmd_data = iuslUAVCtrlCmd()
+iuslUAVCtrlCmd_data.task = 0    # 1 takeoff, 2 gohome, 3 hover, 4 control
+iuslUAVCtrlCmd_data.mode = 0    # 1 for pos ctrl, 2 for vel ctrl
+iuslUAVCtrlCmd_data.x = 0.
+iuslUAVCtrlCmd_data.y = 0.
+iuslUAVCtrlCmd_data.z = 0.
+iuslUAVCtrlCmd_data.yaw = 0.
+
 
 # ==========================================================================================
 # =================================== main =================================================
@@ -309,6 +317,7 @@ rospy.Subscriber('/iusl_ros/estimate_tar_state', iuslTarState, callback_receive_
 
 # pub msg
 auto_fire_cmd_publisher = rospy.Publisher('iusl_ros/auto_fire', Bool, queue_size = 5)
+my_UAV_Control_cmd_publisher = rospy.Publisher('/iusl_ros/UAV_control_cmd', iuslUAVCtrlCmd, queue_size=2)
 
 # 获取控制权限
 rospy.wait_for_service('obtain_release_control_authority')
@@ -321,14 +330,54 @@ while True:
   # bag 的开始和结束
   if bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
     bag_start = False
+    bag_my_state.close()
+    #bag_my_control_cmd.close()
   elif (not bag_start) and ground_mission_cmd:
-    bag_
+    bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
+    #bag_my_control_cmd = rosbag.Bag('home/dji/bigDisk/bag' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_control_cmd', 'w')
     bag_start = True
+  
+  # 控制自己的飞行
+  if ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
+    # 判断是否需要发射网枪
+    auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
+                                     UAV_pitch_now, UAV_roll_now, UAV_yaw_now, 
+                                     cam_pitch_now, cam_roll_now, cam_yaw_now,
+                                     est_fuse_dis)
 
+    # 计算控制指令
+    vx_cmd, vy_cmd, z_cmd, yaw_cmd = (dz, dh, k_h, max_speed,
+                                      est_tar_pos_x, est_tar_pos_y, est_tar_pos_z, est_tar_vx, est_tar_vy, 
+                                      cam_x_now, cam_y_now, cam_yaw_now,
+                                      home_rtk.altitude)
+
+    # 控制无人机飞行
+    iuslUAVCtrlCmd_data.task = 4
+    iuslUAVCtrlCmd_data.mode = 2    # 1 for pos ctrl, 2 for vel ctrl
+    iuslUAVCtrlCmd_data.x = vx_cmd
+    iuslUAVCtrlCmd_data.y = vy_cmd
+    iuslUAVCtrlCmd_data.z = z_cmd  
+    iuslUAVCtrlCmd_data.yaw = yaw_cmd
+    my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
+
+  # 广播是否发射网枪的指令
+  auto_fire_cmd_publisher.publish(auto_fire_cmd)
   # bag 保存
   if bag_start:
-    bag_est_tar_state.write('/iusl_bag/estimate_tar_state', est_tar_state)
-    bag_img_detect_result.write('/iusl_bag/img_detect_result', img_detection_result)
+    # 保存自己的状态
+    my_state_for_bag = iuslMyState()
+    my_state_for_bag.UAV_lat = UAV_lat_now
+    my_state_for_bag.UAV_lon = UAV_lon_now
+    my_state_for_bag.UAV_alt = UAV_alt_now
+    my_state_for_bag.UAV_yaw = UAV_yaw_now
+    my_state_for_bag.UAV_vx = UAV_vx_now
+    my_state_for_bag.UAV_vy = UAV_vy_now
+    my_state_for_bag.cam_x = cam_x_now
+    my_state_for_bag.cam_y = cam_y_now
+    my_state_for_bag.cam_z = cam_z_now
+    bag_my_state.write('/iusl_bag/my_state', my_state_for_bag)
+    # 保存控制指令
+    #bag_my_control_cmd.write('/iusl_bag/my_control_cmd', img_detection_result)
   rate.sleep()
 
 
