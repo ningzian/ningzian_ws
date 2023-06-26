@@ -30,6 +30,8 @@
 #include <geometry_msgs/Quaternion.h>
 #include <std_msgs/UInt8.h>                  // RTK state, flight state
 #include <std_msgs/UInt16.h> 
+#include <std_msgs/Int16.h> 
+
 //#include <std_msgs/Float64.h>
 #include <dji_osdk_ros/MobileData.h>         // mobile data
 #include <dji_osdk_ros/iuslGimbalCmd.h>      // gimbal control
@@ -45,7 +47,7 @@
 #define  PI 3.141592653
 
 void rtkPosCallback(const sensor_msgs::NavSatFix& msg);  //read rtk pos
-void callback_recive_rtkYaw(const std_msgs::UInt16& msg);  //读取无人机的RTKyaw
+void callback_recive_rtkYaw(const std_msgs::Int16& msg);  //读取无人机的RTKyaw
 void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg);  //无人机自身的姿态
 void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg);  //read gimbal angle
 

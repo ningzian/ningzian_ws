@@ -11,11 +11,13 @@
     <param name="use_broadcast" type="bool" value="false"/>
     </node>
 
-    <!--
+    
     <node pkg="dji_osdk_ros" type="zigbee.py" name="zigbee" output="screen">
     </node>
+    
     <node pkg="dji_osdk_ros" type="iusl_img_manage" name="iusl_img_manage" output="screen">
     </node>
+    <!--
     
 
    

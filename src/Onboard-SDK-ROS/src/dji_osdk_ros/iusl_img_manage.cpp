@@ -13,7 +13,7 @@
 // need manual setup
 std::string data_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/obj.data";
 std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj.cfg";
-std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj_best.weights";
+std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/2-1_2-2.weights";
 int gim_max_speed = 7;       // 8
 float gim_control_k = 0.035;   // 0.015
 
@@ -129,9 +129,11 @@ void rtkPosCallback(const sensor_msgs::NavSatFix& msg)  //rtk pos
   UAV_alt_now = msg.altitude;
 }
 
-void callback_recive_rtkYaw(const std_msgs::UInt16& msg)
+void callback_recive_rtkYaw(const std_msgs::Int16& msg)
 {
-  UAV_yaw_now = msg.data + 90;
+  UAV_yaw_now = static_cast<float>(msg.data) + 90.f;
+  if (UAV_yaw_now >= 360)
+  {UAV_yaw_now -= 360;}
 }
 
 void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg)
@@ -139,6 +141,7 @@ void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg)
   cam_pitch_now = msg.vector.x;   // pitch
   cam_yaw_now = msg.vector.z;     // yaw
   cam_roll_now = msg.vector.y;    // roll
+
 }
 
 void mobileCallback(const dji_osdk_ros::MobileData & msg)    // 接收PSDK的激光测距数据
@@ -146,7 +149,7 @@ void mobileCallback(const dji_osdk_ros::MobileData & msg)    // 接收PSDK的激
   int data_length = sizeof(msg.data)/sizeof(msg.data[0]); 
   if (data_length != 0)
   {
-    laser_dis_now = msg.data[0]*256 + msg.data[1] + (float)(msg.data[2]*256 + msg.data[3])/100;
+    laser_dis_now = (float)(msg.data[0])*256 + (float)msg.data[1] + (float)((float)(msg.data[2])*256 + msg.data[3])/100.f;
     //ROS_INFO("Receive Data from MSDK and length of data is %02d.", data_length);
   }
   
@@ -166,7 +169,26 @@ void callback_UAV_attitude(const geometry_msgs::QuaternionStamped& msg)
     q.w() = qw;
   Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
   UAV_roll_now = euler(2) * 180 / PI;  
-  UAV_pitch_now = - euler(1) * 180 / PI;
+  if (UAV_roll_now >= 0)
+  {
+    UAV_roll_now -= 180;
+  }
+  else
+  {
+    UAV_roll_now += 180;
+  }
+
+  UAV_pitch_now = euler(1) * 180 / PI;
+  if (UAV_pitch_now >= 0)
+  {
+    UAV_pitch_now -= 180;
+  }
+  else
+  {
+    UAV_pitch_now += 180;
+  }
+  //printf("%.2f\n", UAV_pitch_now);
+  //printf("%.2f\n", UAV_pitch_now);
 
 }
 
@@ -207,7 +229,7 @@ int main(int argc, char **argv)
  
 
   ros::Subscriber sub_rtk_pos = nh.subscribe("dji_osdk_ros/rtk_position", 5, rtkPosCallback);
-  ros::Subscriber sub_rtk_yaw = nh.subscribe("dji_osdk_ros/rtk_yaw", 3, callback_recive_rtkYaw);  // Int16
+  ros::Subscriber sub_rtk_yaw = nh.subscribe("dji_osdk_ros/rtk_yaw", 5, callback_recive_rtkYaw);  // Int16
   ros::Subscriber sub_UAV_attitude = nh.subscribe("dji_osdk_ros/attitude", 5, callback_UAV_attitude);
   ros::Subscriber sub_gim_angle = nh.subscribe("dji_osdk_ros/gimbal_angle", 5, gimbalAngleCallback);
 

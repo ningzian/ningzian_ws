@@ -70,6 +70,7 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     # 计算相机的全局位置 pos_my
     UAV_yaw = math.radians(msg.UAV_yaw)
     cam_x, cam_y, cam_z = calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, UAV_yaw)
+    #print(cam_x, cam_y, cam_z)
     pos_my = np.array([[cam_x], [cam_y], [cam_z]])
     # 计算方向信息 est_direction_g_bar
     Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])   # H20T 1536x864
@@ -146,8 +147,8 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
                       [0, 0, 1]])
   dpos = np.dot(R_b2g_z, dpos_rotor_2_cam)
   cam_x = UAV_x + dpos[0, 0]
-  cam_y = UAV_y + dpos[0, 1]
-  cam_z = UAV_z + dpos[0, 2]
+  cam_y = UAV_y + dpos[1, 0]
+  cam_z = UAV_z + dpos[2, 0]
 
   return cam_x, cam_y, cam_z
 

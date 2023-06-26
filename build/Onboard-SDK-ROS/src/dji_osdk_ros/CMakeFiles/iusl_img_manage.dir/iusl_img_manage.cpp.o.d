@@ -1562,6 +1562,7 @@ Onboard-SDK-ROS/src/dji_osdk_ros/CMakeFiles/iusl_img_manage.dir/iusl_img_manage.
  /opt/ros/kinetic/include/geometry_msgs/Quaternion.h \
  /opt/ros/kinetic/include/std_msgs/UInt8.h \
  /opt/ros/kinetic/include/std_msgs/UInt16.h \
+ /opt/ros/kinetic/include/std_msgs/Int16.h \
  /home/dji/ningzian_ws/devel/include/dji_osdk_ros/MobileData.h \
  /home/dji/ningzian_ws/devel/include/dji_osdk_ros/iuslGimbalCmd.h \
  /opt/ros/kinetic/include/std_msgs/Int32MultiArray.h \

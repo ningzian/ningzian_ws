@@ -42,14 +42,14 @@ def callback_autofire_cmd(msg):
 #   接收RTK的经纬度和海拔，
 def callback_recive_rtkpos(msg):             # update my UAV pos
   # for msg pub
-  global home_rtk_publisher
   global home_rtk_num
   global home_rtk_OK
+  global home_rtk_msg
   # for ros bag
   global bag_start
   global bag_home_rtk
-  if (home_rtk_num < 20) and (max(msg.position_covariance) > 0) and (max(msg.position_covariance) < 0.02) and (msg.altitude > 0.5):
-    home_rtk_publisher.publish(msg)
+  if (home_rtk_num < 20) and (msg.altitude > 0.5):
+    home_rtk_msg = msg
     home_rtk_num += 1
     home_rtk_OK = True
     if bag_start:
@@ -96,12 +96,14 @@ bag_start = False
 
 home_rtk_num = 0
 home_rtk_OK = False
+home_rtk_msg = NavSatFix()
 #bag_start = False             # 是否开始记录bag
 
 
 # ==================================================================================
 #--------------------------------  node main   -------------------------------------
 #===================================================================================
+time.sleep(2)
 rospy.init_node('zigbee', anonymous=True)
 rate = rospy.Rate(50)
 
@@ -119,10 +121,10 @@ netgun_serial.write(send_data)
 while True:
   # rosbag 
   # bag 的开始和结束
-  if (not bag_start) and ground_mission_cmd:
+  if (not bag_start) and home_rtk_num < 15:
     bag_start = True
-    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk', 'w')
-  elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk.bag', 'w')
+  elif bag_start and home_rtk_num >=20 :
     bag_start = False
     bag_home_rtk.close()
     
@@ -149,7 +151,8 @@ while True:
             netgun_serial.write(send_data)
   # end receive zigbee data
   # pub ground_mission_cmd
-  ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd      
+  ground_mission_cmd_publisher.publish(ground_mission_cmd)   # pub cmd  
+  home_rtk_publisher.publish(home_rtk_msg)    
   rate.sleep()
 # end while
 
