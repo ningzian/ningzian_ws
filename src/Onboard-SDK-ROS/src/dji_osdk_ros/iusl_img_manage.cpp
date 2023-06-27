@@ -208,7 +208,7 @@ int main(int argc, char **argv)
   net_height = detector.get_net_height();
 
   // delay time
-  ros::Duration(1).sleep();
+  //ros::Duration(1).sleep();
   
   // start main camera stream 
   ros::service::waitForService("/setup_camera_stream");

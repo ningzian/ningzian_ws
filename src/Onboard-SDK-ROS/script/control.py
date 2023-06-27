@@ -174,12 +174,12 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
 
 
 # 根据目标的状态和自己的状态，计算水平速度和垂直高度指令
-def cal_my_cmd(dz, dh, k_h, max_speed,
+def cal_my_cmd(dz, dh, k, max_speed,
                tar_x, tar_y, tar_z, tar_vx, tar_vy, 
                my_x, my_y, cam_yaw_now,
                home_alt):
   # 计算高度控制指令
-  z_cmd = - est_tar_z + 2.9 + home_alt
+  z_cmd = - tar_z + 2.9 + home_alt
   # 计算偏航控制指令
   yaw_cmd = cam_yaw_now
   # 计算水平速度指令
@@ -352,10 +352,10 @@ while True:
                                      est_fuse_dis)
 
     # 计算控制指令
-    vx_cmd, vy_cmd, z_cmd, yaw_cmd = (dz, dh, k_h, max_speed,
-                                      est_tar_pos_x, est_tar_pos_y, est_tar_pos_z, est_tar_vx, est_tar_vy, 
-                                      cam_x_now, cam_y_now, cam_yaw_now,
-                                      home_rtk.altitude)
+    vx_cmd, vy_cmd, z_cmd, yaw_cmd = cal_my_cmd(dz, dh, k_h, max_speed,
+                                                est_tar_pos_x, est_tar_pos_y, est_tar_pos_z, est_tar_vx, est_tar_vy, 
+                                                cam_x_now, cam_y_now, cam_yaw_now,
+                                                home_rtk.altitude)
 
     # 控制无人机飞行
     iuslUAVCtrlCmd_data.task = 4
