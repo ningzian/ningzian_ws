@@ -142,7 +142,8 @@ def callback_receive_est_tar(msg):
   est_tar_pos_z = msg.tar_z
   est_tar_vx = msg.tar_vx
   est_tar_vy = msg.tar_vy
-  est_fuse_dis = fuse_dis
+  est_fuse_dis = msg.fuse_dis
+  print(est_tar_OK)
   return
 
 
@@ -225,7 +226,7 @@ def auto_fire_decide(box_center_x, box_center_y, box_width, box_height,
     Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])
     fire_cross = np.dot(Intrinsic_Matrix, d_pos_c)
     fire_cross_x = fire_cross[0, 0]
-    fire_cross_y = fire_cross[0, 1] + box_height/4
+    fire_cross_y = fire_cross[1, 0] + box_height/4
     # 判断准星是否在检测框内
     fire_cross_dx = abs(fire_cross_x - box_center_x)
     fire_cross_dy = abs(fire_cross_y - box_center_y)
@@ -342,7 +343,7 @@ while True:
   #print(home_rtk_OK)
   #print(ground_mission_cmd)
   #print(auto_fire_cmd)
-  #print(est_tar_OK)
+  print(est_tar_OK)
   if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
     # 判断是否需要发射网枪
     auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
