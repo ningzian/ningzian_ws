@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 # coding=utf-8
-"""
-控制节点
-"""
+
 
 import rospy
 import rosbag
@@ -34,7 +32,10 @@ from dji_osdk_ros.srv import ObtainControlAuthority
 # 接收地面站的指令
 def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行任务
   global ground_mission_cmd
+  global is_tracked
   ground_mission_cmd = msg.data
+  if (not is_tracked) and ground_mission_cmd:
+    is_tracked = True 
   return
 
 # 接收home信息
@@ -143,7 +144,6 @@ def callback_receive_est_tar(msg):
   est_tar_vx = msg.tar_vx
   est_tar_vy = msg.tar_vy
   est_fuse_dis = msg.fuse_dis
-  print(est_tar_OK)
   return
 
 
@@ -285,6 +285,7 @@ est_fuse_dis = 0.
 bag_start = False
 ground_mission_cmd = False
 auto_fire_cmd = False
+is_tracked = False
 
 iuslUAVCtrlCmd_data = iuslUAVCtrlCmd()
 iuslUAVCtrlCmd_data.task = 0    # 1 takeoff, 2 gohome, 3 hover, 4 control
@@ -317,7 +318,7 @@ rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_reci
 rospy.Subscriber('/iusl_ros/estimate_tar_state', iuslTarState, callback_receive_est_tar)
 
 # pub msg
-auto_fire_cmd_publisher = rospy.Publisher('iusl_ros/auto_fire', Bool, queue_size = 5)
+auto_fire_cmd_publisher = rospy.Publisher('/iusl_ros/auto_fire', Bool, queue_size = 5)
 my_UAV_Control_cmd_publisher = rospy.Publisher('/iusl_ros/UAV_control_cmd', iuslUAVCtrlCmd, queue_size=2)
 
 # 获取控制权限
@@ -332,18 +333,12 @@ while True:
   if (not bag_start) and ground_mission_cmd:
     bag_start = True
     bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
-    #bag_my_control_cmd = rosbag.Bag('home/dji/bigDisk/bag' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_control_cmd', 'w')
   elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
     bag_start = False
     bag_my_state.close()
-    #bag_my_control_cmd.close()
   
   
   # 控制自己的飞行
-  #print(home_rtk_OK)
-  #print(ground_mission_cmd)
-  #print(auto_fire_cmd)
-  print(est_tar_OK)
   if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
     # 判断是否需要发射网枪
     auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
@@ -365,10 +360,24 @@ while True:
     iuslUAVCtrlCmd_data.z = z_cmd  
     iuslUAVCtrlCmd_data.yaw = yaw_cmd
     my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
+  elif is_tracked and (not ground_mission_cmd):
+    # 控制无人机 hover
+    iuslUAVCtrlCmd_data.task = 3
+    iuslUAVCtrlCmd_data.mode = 2    # 1 for pos ctrl, 2 for vel ctrl
+    iuslUAVCtrlCmd_data.x = 0
+    iuslUAVCtrlCmd_data.y = 0
+    iuslUAVCtrlCmd_data.z = z_cmd  
+    iuslUAVCtrlCmd_data.yaw = yaw_cmd
+    #print(iuslUAVCtrlCmd_data)
+    for i_tem in range(5):
+      my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
+      time.sleep(0.1)
+    res = Obtain_control_handle(False)
     
 
   # 广播是否发射网枪的指令
   auto_fire_cmd_publisher.publish(auto_fire_cmd)
+
   # bag 保存
   if bag_start:
     # 保存自己的状态
@@ -383,9 +392,10 @@ while True:
     my_state_for_bag.cam_y = cam_y_now
     my_state_for_bag.cam_z = cam_z_now
     bag_my_state.write('/iusl_bag/my_state', my_state_for_bag)
-    # 保存控制指令
-    #bag_my_control_cmd.write('/iusl_bag/my_control_cmd', img_detection_result)
+
   rate.sleep()
+
+  
 
 
 

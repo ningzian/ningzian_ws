@@ -123,7 +123,7 @@ def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行
 # 接收发射网枪的指令，用于bag的中断保存
 def callback_autofire_cmd(msg):
   global auto_fire_cmd
-  auto_fire_cmd = msg
+  auto_fire_cmd = msg.data
   return
 
 
