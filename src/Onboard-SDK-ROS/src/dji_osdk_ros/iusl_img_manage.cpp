@@ -132,7 +132,7 @@ void rtkPosCallback(const sensor_msgs::NavSatFix& msg)  //rtk pos
 void callback_recive_rtkYaw(const std_msgs::Int16& msg)
 {
   UAV_yaw_now = static_cast<float>(msg.data) + 90.f;
-  if (UAV_yaw_now >= 360)
+  if (UAV_yaw_now >= 180)
   {UAV_yaw_now -= 360;}
 }
 
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
   net_height = detector.get_net_height();
 
   // delay time
-  ros::Duration(5).sleep();
+  ros::Duration(1).sleep();
   
   // start main camera stream 
   ros::service::waitForService("/setup_camera_stream");

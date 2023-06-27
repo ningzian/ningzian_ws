@@ -18,16 +18,15 @@
     <node pkg="dji_osdk_ros" type="iusl_img_manage" name="iusl_img_manage" output="screen">
     </node>
     <!--
-    
+    <node pkg="dji_osdk_ros" type="estimate.py" name="estimate" output="screen">
+    </node>
 
-   
+
+    
     
     <node pkg="mavlink_bridge" type="test.py" name="test" output="screen">
     </node>
-    <node pkg="dji_osdk_ros" type="iusl_img_manage" name="iusl_img_manage" output="screen">
-    </node>
-    <node pkg="dji_osdk_ros" type="estimate.py" name="estimate" output="screen">
-    </node>
+    
 
 
     <node pkg="dji_osdk_ros" type="control.py" name="control" output="screen">

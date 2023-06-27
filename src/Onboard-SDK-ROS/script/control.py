@@ -99,13 +99,13 @@ def callback_recive_rtkpos(msg):
     home_lat = math.radians(home_rtk.latitude)
     home_lon = math.radians(home_rtk.longitude)
     home_alt = home_rtk.altitude
-    Ec = 6378137. * (1 - 21412./6356725. * (math.sin(UAV_lat)**2) ) + UAV_alt
-    Ed = Ec * math.cos(UAV_lat)
-    d_lat = UAV_lat - home_lat
-    d_lon = UAV_lon - home_lon
+    Ec = 6378137. * (1 - 21412./6356725. * (math.sin(UAV_lat_now)**2) ) + UAV_alt_now
+    Ed = Ec * math.cos(UAV_lat_now)
+    d_lat = UAV_lat_now - home_lat
+    d_lon = UAV_lon_now - home_lon
     UAV_x = d_lat * Ec
     UAV_y = d_lon * Ed
-    UAV_z = home_alt - UAV_alt
+    UAV_z = home_alt - UAV_alt_now
     # 计算相机的全局位置 pos_my
     cam_x_now, cam_y_now, cam_z_now = calculate_cam_pos(UAV_lat_now, UAV_lon_now, UAV_alt_now, home_lat, home_lon, home_alt, UAV_yaw_now)
   return
@@ -167,8 +167,8 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
                       [0, 0, 1]])
   dpos = np.dot(R_b2g_z, dpos_rotor_2_cam)
   cam_x = UAV_x + dpos[0, 0]
-  cam_y = UAV_y + dpos[0, 1]
-  cam_z = UAV_z + dpos[0, 2]
+  cam_y = UAV_y + dpos[1, 0]
+  cam_z = UAV_z + dpos[2, 0]
   return cam_x, cam_y, cam_z
 
 
@@ -198,7 +198,7 @@ def cal_my_cmd(dz, dh, k_h, max_speed,
 def auto_fire_decide(box_center_x, box_center_y, box_width, box_height, 
                      UAV_pitch, UAV_roll, UAV_yaw, 
                      cam_pitch, cam_roll, cam_yaw,
-                     fuse_dis)
+                     fuse_dis):
   if (fuse_dis > 7) or (fuse_dis < 3):
     auto_fire_cmd = False
   else:
@@ -309,7 +309,7 @@ rospy.Subscriber('/iusl_ros/home_rtk', NavSatFix, callback_recive_home_rtk)
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 rospy.Subscriber('dji_osdk_ros/rtk_velocity', Vector3Stamped, callback_recive_rtkvel)         # my rtk vel
 rospy.Subscriber('/dji_osdk_ros/rtk_yaw', Int16, callback_recive_rtkYaw) 
-rospy.Subscriber('dji_osdk_ros/attitude', callback_UAV_attitude)
+rospy.Subscriber('dji_osdk_ros/attitude', QuaternionStamped, callback_UAV_attitude)
 rospy.Subscriber('dji_osdk_ros/gimbal_angle', Vector3Stamped, callback_recive_gimbal_angle)
 # sub msg for 估计节点和视觉探测节点
 rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
@@ -339,6 +339,10 @@ while True:
   
   
   # 控制自己的飞行
+  #print(home_rtk_OK)
+  #print(ground_mission_cmd)
+  #print(auto_fire_cmd)
+  #print(est_tar_OK)
   if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
     # 判断是否需要发射网枪
     auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
@@ -360,6 +364,7 @@ while True:
     iuslUAVCtrlCmd_data.z = z_cmd  
     iuslUAVCtrlCmd_data.yaw = yaw_cmd
     my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
+    
 
   # 广播是否发射网枪的指令
   auto_fire_cmd_publisher.publish(auto_fire_cmd)

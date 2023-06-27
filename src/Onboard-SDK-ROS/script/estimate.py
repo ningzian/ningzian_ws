@@ -46,6 +46,7 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
   global kf_R_original
   global est_direction_g_bar
   global fuse_dis
+  global is_laser_measured
   # 需要用到的
   global mobileBox_publisher
 
@@ -70,7 +71,6 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     # 计算相机的全局位置 pos_my
     UAV_yaw = math.radians(msg.UAV_yaw)
     cam_x, cam_y, cam_z = calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, UAV_yaw)
-    #print(cam_x, cam_y, cam_z)
     pos_my = np.array([[cam_x], [cam_y], [cam_z]])
     # 计算方向信息 est_direction_g_bar
     Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])   # H20T 1536x864
@@ -95,10 +95,11 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     measure_max_length = msg.max_length
     cam_f = 0.0045  # for 1536x864
     cam_s = 0.000004093  # for 1536x864
-    if abs(dx) < measure_max_length/2 and abs(dy) < measure_max_length/2 and measure_laser_dis < 18 and measure_laser_dis > 2:
+    if abs(dx) < measure_max_length/2 and abs(dy) < measure_max_length/2 and measure_laser_dis < 15 and measure_laser_dis > 2:
       fuse_dis = measure_laser_dis
       est_UAV_real_length = measure_laser_dis * measure_max_length * cam_s / cam_f
-      kf_R_original[3, 3] = 0.000001
+      is_laser_measured = True
+      kf_R_original[3, 3] = 0.4
     else:
       if measure_max_length < 1:  #(prevent division of zero) 
         measure_max_length = 1
@@ -161,29 +162,33 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
 # ==================================================================================
 
 # ---------------  need manual setup  -----------------------
-est_UAV_real_length = 0.47                    # 目标的尺寸信息
+est_UAV_real_length = 0.35                    # 目标的尺寸信息
 
 kf_Q = np.zeros([6, 6])             # 卡尔曼滤波的参数
-kf_Q[3, 3] = 0.1 
-kf_Q[4, 4] = 0.1 
-kf_Q[5, 5] = 0.1 
+kf_Q[0, 0] = 0.1 
+kf_Q[1, 1] = 0.1
+kf_Q[2, 2] = 0.1
+kf_Q[3, 3] = 0.3 
+kf_Q[4, 4] = 0.3 
+kf_Q[5, 5] = 0.3 
 kf_R_original = np.zeros([4, 4])
-kf_R_original[0, 0] = 0.0001
-kf_R_original[1, 1] = 0.0001
-kf_R_original[2, 2] = 0.0001
+kf_R_original[0, 0] = 0.1
+kf_R_original[1, 1] = 0.1
+kf_R_original[2, 2] = 0.1
 kf_R_original[3, 3] = 1        # 如果有激光测距数据，此值会更新成 0.000001
 kf_P = np.zeros([6, 6])
-kf_P[0, 0] = 0.1
-kf_P[1, 1] = 0.1
-kf_P[2, 2] = 0.1
-kf_P[3, 3] = 0.1
-kf_P[4, 4] = 0.1
-kf_P[5, 5] = 0.1
+kf_P[0, 0] = 0.5
+kf_P[1, 1] = 0.5
+kf_P[2, 2] = 0.5
+kf_P[3, 3] = 0.5
+kf_P[4, 4] = 0.5
+kf_P[5, 5] = 0.5
 
 # ----------------  updated states  ---------------------
 ground_mission_cmd = False      # 有没有在执行任务
 auto_fire_cmd = False
 bag_start = False
+is_laser_measured = False
 
 home_rtk_OK = False     # 原点经纬度，起飞点的经纬度和海拔
 home_rtk = NavSatFix()
@@ -200,6 +205,7 @@ kf_estimated_state = np.array([[0],[0],[0], [0], [0], [0]])    # initial state
 
 est_tar_state = iuslTarState()
 est_tar_state.tar_OK = False
+est_tar_state.is_laser_measured = False
 est_tar_state.tar_x = 0.
 est_tar_state.tar_y = 0.
 est_tar_state.tar_z = 0.
@@ -250,6 +256,8 @@ while True:
   time_now = time_tem
   if dt < 0.02:
     dt = 0.02
+  if dt > 0.1:
+    dt = 0.1
   kf_F[0, 3] = dt
   kf_F[1, 4] = dt
   kf_F[2, 5] = dt
@@ -266,7 +274,7 @@ while True:
     kf_P[3, 3] = 0.1
     kf_P[4, 4] = 0.1
     kf_P[5, 5] = 0.1
-    kf_R_original[3, 3] = 0.1
+    kf_R_original[3, 3] = 1
     
   # if there is a new measurment, do all PLKF steps
   if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd):
@@ -276,17 +284,17 @@ while True:
       z1 = np.dot((np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar))), pos_my)
       z2 = pos_my + np.dot(fuse_dis, est_direction_g_bar)
       kf_mear_state = np.vstack([z1, z2])
-      # calculate KF_R
-      r_tem = np.linalg.norm(kf_estimated_state[0:3, 0] - pos_my)
+      # calculate kf_R
+      r_tem = fuse_dis  # np.linalg.norm(kf_estimated_state[0:3, 0] - pos_my)
       E_tem_1 = np.hstack([np.dot(r_tem, (np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar)))), np.zeros([3, 1])])
       E_tem_2 = np.hstack([np.dot(r_tem, np.identity(3)), est_direction_g_bar])
       E_tem = np.vstack([E_tem_1, E_tem_2])
-      KF_R = np.dot(np.dot(E_tem, kf_R_original), np.transpose(E_tem))
+      kf_R = np.dot(np.dot(E_tem, kf_R_original), np.transpose(E_tem))
       # calculate H
       H1 = np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar))
       H1 = np.hstack([H1, np.zeros([3, 3])])
       H2 = np.hstack([np.identity(3), np.zeros([3, 3])])
-      kf_H = np.hstack([H1, H2])  
+      kf_H = np.vstack([H1, H2])  
       
       if not est_kf_OK:   # 第一次的估计状态
         kf_estimated_state = np.vstack([pos_my + est_direction_g_bar * fuse_dis, np.array([[0], [0], [0]])])
@@ -304,11 +312,12 @@ while True:
         kf_estimated_state = np.dot(kf_F, kf_estimated_state)
     # ----------- pub ---------------
     est_tar_state.tar_OK = est_kf_OK
-    est_tar_state.tar_x = ekf_estimated_state[0,0]
-    est_tar_state.tar_y = ekf_estimated_state[1,0]
-    est_tar_state.tar_z = ekf_estimated_state[2,0]
-    est_tar_state.tar_vx = ekf_estimated_state[3,0]
-    est_tar_state.tar_vy = ekf_estimated_state[4,0]
+    est_tar_state.is_laser_measured = is_laser_measured
+    est_tar_state.tar_x = kf_estimated_state[0,0]
+    est_tar_state.tar_y = kf_estimated_state[1,0]
+    est_tar_state.tar_z = kf_estimated_state[2,0]
+    est_tar_state.tar_vx = kf_estimated_state[3,0]
+    est_tar_state.tar_vy = kf_estimated_state[4,0]
     est_tar_state.fuse_dis = fuse_dis
     est_tar_state_publisher.publish(est_tar_state)
   # end if ground_mission_cmd
