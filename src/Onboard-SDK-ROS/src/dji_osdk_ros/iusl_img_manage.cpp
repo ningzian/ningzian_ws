@@ -147,8 +147,10 @@ void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg)
 
 void mobileCallback(const dji_osdk_ros::MobileData & msg)    // 接收PSDK的激光测距数据
 {
-  int data_length = sizeof(msg.data)/sizeof(msg.data[0]); 
-  if (data_length != 0)
+  int data_type = (int)(msg.data[0]);
+  int data_length = msg.data.size() - 1;   //sizeof(msg.data)/sizeof(msg.data[0]); 
+
+  if (data_type == 11 & data_length > 3.5 && data_length < 4.5)  //激光测距数据
   {
     laser_dis_now = (float)(msg.data[0])*256 + (float)msg.data[1] + (float)((float)(msg.data[2])*256 + msg.data[3])/100.f;
     //ROS_INFO("Receive Data from MSDK and length of data is %02d.", data_length);
