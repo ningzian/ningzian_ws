@@ -13,7 +13,7 @@
 // need manual setup
 std::string data_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/obj.data";
 std::string cfg_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/yolov4-tiny-obj.cfg";
-std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/2-1_2-2.weights";
+std::string weight_file = "/home/dji/ningzian_ws/src/Onboard-SDK-ROS/script/darknet_data/1-2.weights";
 int gim_max_speed = 7;       // 8
 float gim_control_k = 0.035;   // 0.015
 
@@ -108,6 +108,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     detect_result.cam_pitch = cam_pitch_now;
     detect_result.cam_yaw = cam_yaw_now;
     detect_result.laser_dis = laser_dis_now;              // 激光测距
+    // 保存图像
+    std::string time_path = std::to_string(image_time);
+    std::string path_detect = "/home/dji/bigDisk/images/" + time_path + ".png";
+    cv::imwrite(path_detect, cv_img_resize); 
     /*if (flight_state > 1.5)
     {
       // put text 
@@ -115,9 +119,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       cv::rectangle(cv_img_resize, roi, cv::Scalar(0,255,0), 2, 8, 0 ); 
       //putText(cv_img_resize, "MAV " + std::to_string(detect_probability), cv::Point2f(box.x, box.y - 14), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 255, 0), 2);
       // write detect img
-      std::string time_path = std::to_string(image_time);
-      std::string path_detect = "/home/dji/bigDisk/img_detect/" + time_path + ".png";
-      cv::imwrite(path_detect, cv_img_resize); 
     } */
   }
 }
@@ -220,10 +221,10 @@ int main(int argc, char **argv)
   //ROS_INFO("start main camera ");
 
   // start RTK
-  //ros::service::waitForService("iusl/set_rtk_enable");
-  //ros::ServiceClient set_RTK_client = nh.serviceClient<dji_osdk_ros::iuslSetRtkEnable>("iusl/set_rtk_enable");
-  //dji_osdk_ros::SetupCameraStream set_rtk_srv;
-  //set_RTK_client.call(set_rtk_srv);
+  ros::service::waitForService("iusl/set_rtk_enable");
+  ros::ServiceClient set_RTK_client = nh.serviceClient<dji_osdk_ros::iuslSetRtkEnable>("iusl/set_rtk_enable");
+  dji_osdk_ros::SetupCameraStream set_rtk_srv;
+  set_RTK_client.call(set_rtk_srv);
 
   // subscriber msg
  
