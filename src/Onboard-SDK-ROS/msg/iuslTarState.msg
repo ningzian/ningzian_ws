@@ -1,5 +1,7 @@
 # estimated target UAV state
 
+float64 time
+
 bool tar_OK
 bool is_laser_measured
 

@@ -26,11 +26,23 @@ from std_msgs.msg import Bool
 # ==================================================================================
 # ============================  receive callback   =================================
 # ==================================================================================
-def callback_recive_home_rtk(msg):            # 接收home信息
-  global home_rtk
+#   接收RTK的经纬度和海拔，用于记录home位置
+def callback_recive_rtkpos(msg):             # update my UAV pos
+  # for msg pub
+  global home_rtk_num
   global home_rtk_OK
-  home_rtk = msg
-  home_rtk_OK = True
+  global home_rtk_msg
+  global home_rtk_publisher
+  # for ros bag
+  global bag_start
+  global bag_home_rtk
+  if (home_rtk_num < 200) and (msg.altitude > 0.5):
+    home_rtk_msg = msg
+    home_rtk_num += 1
+    home_rtk_OK = True
+    home_rtk_publisher.publish(msg)
+    if bag_start:
+      bag_home_rtk.write('/iusl_bag/home_rtk', msg)
   return
 
 
@@ -190,8 +202,10 @@ auto_fire_cmd = False
 bag_start = False
 is_laser_measured = False
 
+home_rtk_num = 0
 home_rtk_OK = False     # 原点经纬度，起飞点的经纬度和海拔
 home_rtk = NavSatFix()
+
 
 measure_is_new = False    # 相机观测的信息，包括观测时的无人机和相机的状态信息
 img_detection_result = iuslDetectionResult()
@@ -227,16 +241,17 @@ rospy.init_node('estimate', anonymous=True)
 rate = rospy.Rate(50)
 
 # sub msg 
-rospy.Subscriber('/iusl_ros/home_rtk', NavSatFix, callback_recive_home_rtk)
 rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)
 rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
 rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
+rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # 接收RTK数据
 
 
 
 # pub msg 
 est_tar_state_publisher = rospy.Publisher('/iusl_ros/estimate_tar_state', iuslTarState, queue_size=5)
 mobileBox_publisher = rospy.Publisher('/iusl_ros/mobile_box', Int32MultiArray, queue_size=5)
+home_rtk_publisher = rospy.Publisher('/iusl_ros/home_rtk', NavSatFix, queue_size=5)
 
 time_now = rospy.Time.now().to_sec()
 while True:
@@ -245,10 +260,12 @@ while True:
     bag_start = True 
     bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
     bag_img_detect_result = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'img_detect_result', 'w')
+    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk.bag', 'w')
   elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
     bag_start = False
     bag_est_tar_state.close()
     bag_img_detect_result.close()
+    bag_home_rtk.close()
   
   # calculate dt
   time_tem = rospy.Time.now().to_sec()
@@ -311,6 +328,7 @@ while True:
       if est_kf_OK:
         kf_estimated_state = np.dot(kf_F, kf_estimated_state)
     # ----------- pub ---------------
+    est_tar_state.time = time_now   # img_detect_result.time
     est_tar_state.tar_OK = est_kf_OK
     est_tar_state.is_laser_measured = is_laser_measured
     est_tar_state.tar_x = kf_estimated_state[0,0]
