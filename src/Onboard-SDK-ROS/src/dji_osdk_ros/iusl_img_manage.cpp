@@ -109,6 +109,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     detect_result.cam_yaw = cam_yaw_now;
     detect_result.laser_dis = laser_dis_now;              // 激光测距
     // 保存图像
+    cv::Rect roi(box.x, box.y, box.width, box.height);
+    cv::rectangle(cv_img_resize, roi, cv::Scalar(0,255,0), 2, 8, 0 ); 
     std::string time_path = std::to_string(image_time);
     std::string path_detect = "/home/dji/bigDisk/images/" + time_path + ".png";
     cv::imwrite(path_detect, cv_img_resize); 
@@ -148,11 +150,11 @@ void gimbalAngleCallback(const geometry_msgs::Vector3Stamped & msg)
 void mobileCallback(const dji_osdk_ros::MobileData & msg)    // 接收PSDK的激光测距数据
 {
   int data_type = (int)(msg.data[0]);
-  int data_length = msg.data.size() - 1;   //sizeof(msg.data)/sizeof(msg.data[0]); 
+  int data_length = (int)(msg.data.size()) - 1;   //sizeof(msg.data)/sizeof(msg.data[0]); 
 
-  if (data_type == 11 & data_length > 3.5 && data_length < 4.5)  //激光测距数据
+  if (data_type == 17 & data_length == 4)  //激光测距数据
   {
-    laser_dis_now = (float)(msg.data[0])*256 + (float)msg.data[1] + (float)((float)(msg.data[2])*256 + msg.data[3])/100.f;
+    laser_dis_now = (float)(msg.data[1])*256 + (float)msg.data[2] + (float)((float)(msg.data[3])*256 + msg.data[4])/100.f;
     //ROS_INFO("Receive Data from MSDK and length of data is %02d.", data_length);
   }
   

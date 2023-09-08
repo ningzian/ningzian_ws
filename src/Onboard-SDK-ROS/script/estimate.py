@@ -18,6 +18,7 @@ import time
 from sensor_msgs.msg import NavSatFix     # rtk pos
 from dji_osdk_ros.msg import iuslDetectionResult
 from dji_osdk_ros.msg import iuslTarState
+from dji_osdk_ros.msg import MobileData        # 数据类型：遥控器发来的信息
 from std_msgs.msg import UInt8                 # flight state
 from std_msgs.msg import Int32MultiArray
 from std_msgs.msg import Bool
@@ -27,7 +28,7 @@ from std_msgs.msg import Bool
 # ============================  receive callback   =================================
 # ==================================================================================
 #   接收RTK的经纬度和海拔，用于记录home位置
-def callback_recive_rtkpos(msg):             # update my UAV pos
+def callback_recive_rtkpos(msg):          
   # for msg pub
   global home_rtk_num
   global home_rtk_OK
@@ -48,31 +49,43 @@ def callback_recive_rtkpos(msg):             # update my UAV pos
 
 def callback_recive_DetectionResult(msg):      # 接收检测框的信息
   # 读取的全局变量
-  global home_rtk_OK           # 只有有了home_rtk数据才能计算
-  global home_rtk              # 用于计算拍摄照片时，相机的全局位置坐标
-  global img_detection_result
+  global home_rtk_OK            # 只有有了home_rtk数据才能计算
+  global home_rtk               # 用于计算拍摄照片时，相机的全局位置坐标
+  global bag_start
   # 需要更新的全局变量
-  global measure_is_new
-  global pos_my
-  global est_UAV_real_length
+  global img_detection_result   # 变量更新：检测结果
+  global pos_my                 # 变量更新：相机的全局位置
+  global measure_is_new         # 变量更新：观测信息
+  global mear_g_now             #     bearing观测
+  global mear_fused_dis_now     #     距离观测
+  global est_UAV_real_length    # 变量更新：目标无人机的尺寸信息
   global kf_R_original
-  global est_direction_g_bar
-  global fuse_dis
-  global is_laser_measured
+  global is_laser_measured      # 变量更新：是否有激光测距数据
   # 需要用到的
-  global mobileBox_publisher
+  global mobileBox_publisher    # 发送距离信息到遥控器
+  global bag_img_detect_result
+  global bag_cam_pos
+  global bag_measurement
 
+  # 更新变量：检测结果
   img_detection_result = msg
+
+  # 保存bag：检测信息
+  if bag_start:
+    bag_img_detect_result.write('/iusl_bag/img_detect_result', msg)
+  
+
+  # 各种功能实现：计算相机全局位置、计算观测信息
   if home_rtk_OK:
     measure_is_new = True
-    # 读取拍摄照片时无人机的位置和姿态，
+    # 计算相机全局位置cam_pos，更新 pos_my，记录bag
     UAV_lat = math.radians(msg.UAV_lat)
     UAV_lon = math.radians(msg.UAV_lon)
     UAV_alt = msg.UAV_alt
     home_lat = math.radians(home_rtk.latitude)
     home_lon = math.radians(home_rtk.longitude)
     home_alt = home_rtk.altitude
-    # 计算 UAV全局位置 UAV_x, UAV_y, UAV_z
+
     Ec = 6378137. * (1 - 21412./6356725. * (math.sin(UAV_lat)**2) ) + UAV_alt
     Ed = Ec * math.cos(UAV_lat)
     d_lat = UAV_lat - home_lat
@@ -80,11 +93,13 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     UAV_x = d_lat * Ec
     UAV_y = d_lon * Ed
     UAV_z = home_alt - UAV_alt
-    # 计算相机的全局位置 pos_my
+    
     UAV_yaw = math.radians(msg.UAV_yaw)
     cam_x, cam_y, cam_z = calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, UAV_yaw)
     pos_my = np.array([[cam_x], [cam_y], [cam_z]])
-    # 计算方向信息 est_direction_g_bar
+    bag_cam_pos.write('/iusl_bag/cam_pos', pos_my)
+
+    # 计算观测信息：bearing、fused_dis
     Intrinsic_Matrix = np.array([[1099, 0, 768],[0, 1099, 432],[0, 0, 1]])   # H20T 1536x864
     R_1_c2g = np.array([[0, 0, 1],[1, 0, 0],[0, 1, 0]])
     pos_tar_i = np.array([[msg.center_x],[msg.center_y],[1]])
@@ -97,8 +112,8 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     R_z = np.array([[math.cos(-y_tem), math.sin(-y_tem), 0],[-math.sin(-y_tem),math.cos(-y_tem),0],[0, 0, 1]])
     R_Mat_c2g = np.dot(np.dot(np.dot(R_z, R_y), R_x), R_1_c2g)
     direction_g = np.dot(R_Mat_c2g, direction_c)
-    est_direction_g_bar = direction_g/np.linalg.norm(direction_g)
-    # 计算距离信息
+    mear_g_now = direction_g/np.linalg.norm(direction_g)
+    #     计算距离信息
     net_width = 1536
     net_height = 864
     dx = net_width/2 - msg.center_x
@@ -108,35 +123,40 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
     cam_f = 0.0045  # for 1536x864
     cam_s = 0.000004093  # for 1536x864
     if abs(dx) < measure_max_length/2 and abs(dy) < measure_max_length/2 and measure_laser_dis < 15 and measure_laser_dis > 2:
-      fuse_dis = measure_laser_dis
+      mear_fused_dis_now = measure_laser_dis
       est_UAV_real_length = measure_laser_dis * measure_max_length * cam_s / cam_f
       is_laser_measured = True
       kf_R_original[3, 3] = 0.4
     else:
       if measure_max_length < 1:  #(prevent division of zero) 
         measure_max_length = 1
-      fuse_dis = est_UAV_real_length * math.sqrt(cam_f**2 + (dx**2 + dy**2) * (cam_s**2)) / (measure_max_length * cam_s)
+      mear_fused_dis_now = est_UAV_real_length * math.sqrt(cam_f**2 + (dx**2 + dy**2) * (cam_s**2)) / (measure_max_length * cam_s)
+    measurement_now = np.vstack([mear_g_now, mear_fused_dis_now])
+    bag_measurement.write('/iusl_bag/measurement', measurement_now)
+    
     # 发送估计的距离到遥PSDK
     dis_to_mobile = Int32MultiArray()
-    M_data_int = int (fuse_dis) 
-    M_data_dec = int ((fuse_dis - M_data_int) * 10) 
+    M_data_int = int (mear_fused_dis_now) 
+    M_data_dec = int ((mear_fused_dis_now - M_data_int) * 10) 
     dis_to_mobile.data.append(M_data_int)
     dis_to_mobile.data.append(M_data_dec)
     mobileBox_publisher.publish(dis_to_mobile)
 
   return
 
-# 接收地面站的指令
-def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行任务
-  global ground_mission_cmd
-  ground_mission_cmd = msg.data
+# TODO 接收遥控器的指令
+def callback_mobile_data(msg):
+  global ground_mission_cmd  # 遥控器指令：跟踪或者手动飞行
+  global fire_cmd
+
+  # 接收遥控器指令， 更新两个变量
+  data_type = msg.data[0]
+  data_length = msg.data.size() - 1
+
+
   return
 
-# 接收发射网枪的指令，用于bag的中断保存
-def callback_autofire_cmd(msg):
-  global auto_fire_cmd
-  auto_fire_cmd = msg.data
-  return
+
 
 
 # ==================================================================================
@@ -198,7 +218,7 @@ kf_P[5, 5] = 0.5
 
 # ----------------  updated states  ---------------------
 ground_mission_cmd = False      # 有没有在执行任务
-auto_fire_cmd = False
+fire_cmd = False
 bag_start = False
 is_laser_measured = False
 
@@ -210,11 +230,12 @@ home_rtk = NavSatFix()
 measure_is_new = False    # 相机观测的信息，包括观测时的无人机和相机的状态信息
 img_detection_result = iuslDetectionResult()
 
+mear_g_now = np.zeros([3, 1])
+mear_fused_dis_now = 0
+
 pos_my = np.zeros([3, 1])  # 自己相机的全局位置坐标
 
 est_kf_OK = False
-est_direction_g_bar = np.zeros([3, 1])       # 预处理得到的观测信息
-fuse_dis = 0.
 kf_estimated_state = np.array([[0],[0],[0], [0], [0], [0]])    # initial state
 
 est_tar_state = iuslTarState()
@@ -241,10 +262,11 @@ rospy.init_node('estimate', anonymous=True)
 rate = rospy.Rate(50)
 
 # sub msg 
-rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)
-rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)
-rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult)
-rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # 接收RTK数据
+#rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)   # TODO，要修改的
+#rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)                  # TODO，要修改的
+rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)                  # 接收RTK数据
+rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult) # 接收检测结果
+rospy.Subscriber('/dji_osdk_ros/from_mobile_data/', MobileData ,callback_mobile_data)
 
 
 
@@ -258,14 +280,18 @@ while True:
   # rosbag
   if (not bag_start) and ground_mission_cmd:
     bag_start = True 
-    bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
-    bag_img_detect_result = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'img_detect_result', 'w')
+    bag_img_detect_result = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'img_detect_result.bag', 'w')
     bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk.bag', 'w')
-  elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+    bag_cam_pos = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'cam_pos.bag', 'w')
+    bag_measurement = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'measurement.abg', 'w')
+    bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
+  elif bag_start and (fire_cmd or (not ground_mission_cmd)):
     bag_start = False
-    bag_est_tar_state.close()
     bag_img_detect_result.close()
     bag_home_rtk.close()
+    bag_cam_pos.close()
+    bag_measurement.close()
+    bag_est_tar_state.close()
   
   # calculate dt
   time_tem = rospy.Time.now().to_sec()
@@ -294,27 +320,27 @@ while True:
     kf_R_original[3, 3] = 1
     
   # if there is a new measurment, do all PLKF steps
-  if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd):
+  if home_rtk_OK and ground_mission_cmd and (not fire_cmd):
     if measure_is_new: 
       measure_is_new = False
       # calculate mear state
-      z1 = np.dot((np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar))), pos_my)
-      z2 = pos_my + np.dot(fuse_dis, est_direction_g_bar)
+      z1 = np.dot((np.identity(3) - np.dot(mear_g_now, np.transpose(mear_g_now))), pos_my)
+      z2 = pos_my + np.dot(mear_fused_dis_now, mear_g_now)
       kf_mear_state = np.vstack([z1, z2])
       # calculate kf_R
-      r_tem = fuse_dis  # np.linalg.norm(kf_estimated_state[0:3, 0] - pos_my)
-      E_tem_1 = np.hstack([np.dot(r_tem, (np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar)))), np.zeros([3, 1])])
-      E_tem_2 = np.hstack([np.dot(r_tem, np.identity(3)), est_direction_g_bar])
+      r_tem = mear_fused_dis_now  # np.linalg.norm(kf_estimated_state[0:3, 0] - pos_my)
+      E_tem_1 = np.hstack([np.dot(r_tem, (np.identity(3) - np.dot(mear_g_now, np.transpose(mear_g_now)))), np.zeros([3, 1])])
+      E_tem_2 = np.hstack([np.dot(r_tem, np.identity(3)), mear_g_now])
       E_tem = np.vstack([E_tem_1, E_tem_2])
       kf_R = np.dot(np.dot(E_tem, kf_R_original), np.transpose(E_tem))
       # calculate H
-      H1 = np.identity(3) - np.dot(est_direction_g_bar, np.transpose(est_direction_g_bar))
+      H1 = np.identity(3) - np.dot(mear_g_now, np.transpose(mear_g_now))
       H1 = np.hstack([H1, np.zeros([3, 3])])
       H2 = np.hstack([np.identity(3), np.zeros([3, 3])])
       kf_H = np.vstack([H1, H2])  
       
       if not est_kf_OK:   # 第一次的估计状态
-        kf_estimated_state = np.vstack([pos_my + est_direction_g_bar * fuse_dis, np.array([[0], [0], [0]])])
+        kf_estimated_state = np.vstack([pos_my + mear_g_now * mear_fused_dis_now, np.array([[0], [0], [0]])])
         est_kf_OK = True
       else:  # PLKF 步骤：5个公式
         kf_estimated_state = np.dot(kf_F, kf_estimated_state)
@@ -336,13 +362,12 @@ while True:
     est_tar_state.tar_z = kf_estimated_state[2,0]
     est_tar_state.tar_vx = kf_estimated_state[3,0]
     est_tar_state.tar_vy = kf_estimated_state[4,0]
-    est_tar_state.fuse_dis = fuse_dis
+    est_tar_state.mear_fused_dis_now = mear_fused_dis_now
     est_tar_state_publisher.publish(est_tar_state)
   # end if ground_mission_cmd
 
   if bag_start:
     bag_est_tar_state.write('/iusl_bag/estimate_tar_state', est_tar_state)
-    bag_img_detect_result.write('/iusl_bag/img_detect_result', img_detection_result)
   rate.sleep()
 # end while
 
