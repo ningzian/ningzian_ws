@@ -144,15 +144,31 @@ def callback_recive_DetectionResult(msg):      # 接收检测框的信息
 
   return
 
-# TODO 接收遥控器的指令
+# 接收遥控器的指令，更新两个flag
 def callback_mobile_data(msg):
   global ground_mission_cmd  # 遥控器指令：跟踪或者手动飞行
   global fire_cmd
 
   # 接收遥控器指令， 更新两个变量
-  data_type = msg.data[0]
-  data_length = msg.data.size() - 1
+  data_type = int(msg.data[0])
+  data_length = int(msg.data.size() - 1)
 
+  # 跟踪指令，来自遥控器
+  if (data_type == 34) and (data_length == 1):
+    data_tem = int(msg.data[1])
+    if (data_tem == 34):
+      ground_mission_cmd = True
+    elif (data_tem == 0):
+      ground_mission_cmd = False
+
+  # 网枪指令，来自遥控器
+  if (data_type == 51) and (data_length == 1):
+    data_tem = int(msg.data[1])
+    if (data_tem == 51):
+      fire_cmd = True
+      ground_mission_cmd = False
+    elif (data_tem == 0):
+      fire_cmd = False
 
   return
 
@@ -262,8 +278,6 @@ rospy.init_node('estimate', anonymous=True)
 rate = rospy.Rate(50)
 
 # sub msg 
-#rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)   # TODO，要修改的
-#rospy.Subscriber('iusl_ros/auto_fire', Bool, callback_autofire_cmd)                  # TODO，要修改的
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)                  # 接收RTK数据
 rospy.Subscriber('/iusl_ros/DetectionResult', iuslDetectionResult, callback_recive_DetectionResult) # 接收检测结果
 rospy.Subscriber('/dji_osdk_ros/from_mobile_data/', MobileData ,callback_mobile_data)
@@ -277,7 +291,7 @@ home_rtk_publisher = rospy.Publisher('/iusl_ros/home_rtk', NavSatFix, queue_size
 
 time_now = rospy.Time.now().to_sec()
 while True:
-  # rosbag
+  # rosbag，记录从ground
   if (not bag_start) and ground_mission_cmd:
     bag_start = True 
     bag_img_detect_result = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'img_detect_result.bag', 'w')
@@ -285,7 +299,7 @@ while True:
     bag_cam_pos = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'cam_pos.bag', 'w')
     bag_measurement = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'measurement.abg', 'w')
     bag_est_tar_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S")+'est_tar_state.bag', 'w')
-  elif bag_start and (fire_cmd or (not ground_mission_cmd)):
+  elif bag_start and (not ground_mission_cmd):
     bag_start = False
     bag_img_detect_result.close()
     bag_home_rtk.close()
@@ -308,7 +322,9 @@ while True:
   # calculate duration, for plkf reinit 
   time_now = rospy.Time.now().to_sec()
   dt = time_now - img_detection_result.time
-  if dt > 6:
+
+  # 重置估计器
+  if (dt > 6) or (not ground_mission_cmd): 
     est_kf_OK = False
     kf_P = np.zeros([6, 6])
     kf_P[0, 0] = 0.1
