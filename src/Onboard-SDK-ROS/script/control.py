@@ -10,6 +10,7 @@ import os
 import time
 from decimal import Decimal
 import tf
+import serial
 
 from dji_osdk_ros.msg import iuslTarState      # target state
 from dji_osdk_ros.msg import iuslMyState       # 自己的状态用于bag记录
@@ -21,6 +22,7 @@ from std_msgs.msg import Int16                 # rtk yaw
 from std_msgs.msg import Bool                  # 网枪发射指令
 from geometry_msgs.msg import Vector3Stamped   # gimbal state,  UAV RTK velocity
 from geometry_msgs.msg import QuaternionStamped
+from dji_osdk_ros.msg import MobileData           # 数据类型：遥控器发来的信息
 from dji_osdk_ros.msg import iuslDetectionResult  # 图像的检测结果，用于判断是否发射网枪
 from dji_osdk_ros.srv import ObtainControlAuthority
 
@@ -29,13 +31,43 @@ from dji_osdk_ros.srv import ObtainControlAuthority
 # ==========================================================================================
 # ====================== receive msg call back =============================================
 # ==========================================================================================
-# 接收地面站的指令
-def callback_update_ground_cmd(msg): # False 没有执行任务，True 在执行任务
-  global ground_mission_cmd
-  global is_tracked
-  ground_mission_cmd = msg.data
-  if (not is_tracked) and ground_mission_cmd:
-    is_tracked = True 
+
+# TODO，发射网枪和重置网枪
+# 接收遥控器的指令，更新两个flag
+def callback_mobile_data(msg):
+  global ground_mission_cmd  # 遥控器指令：跟踪或者手动飞行
+  global manual_fire_cmd     # 遥控器指令：发射或复位网枪
+  global fire_time           # 发射时间
+  global netgun_serial       # 网枪串口
+  global netgun_reset_data   # 网枪复位指令
+  global netgun_fire_data    # 网枪发射指令
+
+  # 接收遥控器指令， 更新两个变量
+  data_type = int(msg.data[0])
+  data_length = int(msg.data.size() - 1)
+
+  # 跟踪指令，来自遥控器
+  if (data_type == 34) and (data_length == 1):
+    data_tem = int(msg.data[1])
+    if (data_tem == 34):
+      ground_mission_cmd = True
+    elif (data_tem == 0):
+      ground_mission_cmd = False
+
+  # 网枪指令，来自遥控器
+  if (data_type == 51) and (data_length == 1):
+    data_tem = int(msg.data[1])
+    # 发射网枪
+    if (data_tem == 51):    
+      manual_fire_cmd = True
+      ground_mission_cmd = False
+      fire_time = rospy.Time.now().to_sec()
+      netgun_serial.write(netgun_fire_data)
+    # 重置网枪
+    elif (data_tem == 0):
+      manual_fire_cmd = False
+      netgun_serial.write(netgun_reset_data)
+
   return
 
 # 接收home信息
@@ -46,7 +78,7 @@ def callback_recive_home_rtk(msg):
   home_rtk_OK = True
   return
 
-# 接收自己的状态
+# 接收自己的速度信息
 def callback_recive_rtkvel(msg):  
   global UAV_vx_now
   global UAV_vy_now
@@ -179,7 +211,7 @@ def cal_my_cmd(dz, dh, k, max_speed,
                my_x, my_y, cam_yaw_now,
                home_alt):
   # 计算高度控制指令
-  z_cmd = - tar_z + 2.9 + home_alt
+  z_cmd = - tar_z + dz + home_alt
   # 计算偏航控制指令
   yaw_cmd = cam_yaw_now
   # 计算水平速度指令
@@ -242,6 +274,15 @@ def auto_fire_decide(box_center_x, box_center_y, box_width, box_height,
 # ==========================================================================================
 # ================================= 全局变量 ================================================
 # ==========================================================================================
+# 网枪相关
+# zigbee_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.5)
+netgun_serial = serial.Serial('/dev/ttyUSB0', 9600, timeout=0.5) 
+netgun_reset_data = [255, 2, 0, 244, 1]
+netgun_fire_data = [255, 2, 0, 186, 6] 
+fire_time = 0
+auto_fire_cmd = False
+manual_fire_cmd = False
+
 # 需要手动设置的参数
 dz = 3    # 抓捕的垂直高度差
 dh = 4    # 抓捕的水平距离差
@@ -284,8 +325,6 @@ est_fuse_dis = 0.
 
 bag_start = False
 ground_mission_cmd = False
-auto_fire_cmd = False
-is_tracked = False
 
 iuslUAVCtrlCmd_data = iuslUAVCtrlCmd()
 iuslUAVCtrlCmd_data.task = 0    # 1 takeoff, 2 gohome, 3 hover, 4 control
@@ -304,8 +343,9 @@ rospy.init_node('control', anonymous=True)
 rate = rospy.Rate(50)
 
 # sub msg 
-# sub msg for ground_cmd
-rospy.Subscriber('/iusl_ros/ground_mission_cmd', Bool, callback_update_ground_cmd)
+# 修改为遥控器发来的指令
+rospy.Subscriber('/dji_osdk_ros/from_mobile_data/', MobileData ,callback_mobile_data)
+
 # sub msg for 自己的飞行状态
 rospy.Subscriber('/iusl_ros/home_rtk', NavSatFix, callback_recive_home_rtk) 
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
@@ -321,11 +361,10 @@ rospy.Subscriber('/iusl_ros/estimate_tar_state', iuslTarState, callback_receive_
 auto_fire_cmd_publisher = rospy.Publisher('/iusl_ros/auto_fire', Bool, queue_size = 5)
 my_UAV_Control_cmd_publisher = rospy.Publisher('/iusl_ros/UAV_control_cmd', iuslUAVCtrlCmd, queue_size=2)
 
-# 获取控制权限
+# 获取控制权限的服务
 rospy.wait_for_service('obtain_release_control_authority')
 Obtain_control_handle = rospy.ServiceProxy('obtain_release_control_authority', ObtainControlAuthority)
-res = Obtain_control_handle(True)
-Obtain_control = True
+#res = Obtain_control_handle(True)
 
 # 开始循环
 while True:
@@ -333,18 +372,27 @@ while True:
   if (not bag_start) and ground_mission_cmd:
     bag_start = True
     bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
-  elif bag_start and (auto_fire_cmd or (not ground_mission_cmd)):
+  elif bag_start and (not ground_mission_cmd):
     bag_start = False
     bag_my_state.close()
+
+  # 如果发射了网枪超过5秒钟，则复位网枪
+  time_now = rospy.Time.now().to_sec()
+  if fire_cmd and (time_now - fire_time > 5):
+    fire_cmd = False
+    netgun_serial.write(netgun_reset_data)
+
+  # TODO 飞机yaw始终跟踪云台的yaw
+
   
   
   # 控制自己的飞行
-  if home_rtk_OK and ground_mission_cmd and (not auto_fire_cmd) and est_tar_OK:
-    # 判断是否需要发射网枪
-    auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
-                                     UAV_pitch_now, UAV_roll_now, UAV_yaw_now, 
-                                     cam_pitch_now, cam_roll_now, cam_yaw_now,
-                                     est_fuse_dis)
+  if home_rtk_OK and ground_mission_cmd and est_tar_OK:
+    # 自动判断是否需要发射网枪
+    #auto_fire_cmd = auto_fire_decide(bounding_box_center_x, bounding_box_center_y, bounding_box_width, bounding_box_height, 
+    #                                 UAV_pitch_now, UAV_roll_now, UAV_yaw_now, 
+    #                                 cam_pitch_now, cam_roll_now, cam_yaw_now,
+    #                                 est_fuse_dis)
 
     # 计算控制指令
     vx_cmd, vy_cmd, z_cmd, yaw_cmd = cal_my_cmd(dz, dh, k_h, max_speed,
@@ -353,6 +401,7 @@ while True:
                                                 home_rtk.altitude)
 
     # 控制无人机飞行
+    res = Obtain_control_handle(True)
     iuslUAVCtrlCmd_data.task = 4
     iuslUAVCtrlCmd_data.mode = 2    # 1 for pos ctrl, 2 for vel ctrl
     iuslUAVCtrlCmd_data.x = vx_cmd
@@ -360,18 +409,14 @@ while True:
     iuslUAVCtrlCmd_data.z = z_cmd  
     iuslUAVCtrlCmd_data.yaw = yaw_cmd
     my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
-  elif is_tracked and (not ground_mission_cmd):
-    # 控制无人机 hover
+  elif home_rtk_OK and (not ground_mission_cmd):
     iuslUAVCtrlCmd_data.task = 3
     iuslUAVCtrlCmd_data.mode = 2    # 1 for pos ctrl, 2 for vel ctrl
     iuslUAVCtrlCmd_data.x = 0
     iuslUAVCtrlCmd_data.y = 0
-    iuslUAVCtrlCmd_data.z = z_cmd  
-    iuslUAVCtrlCmd_data.yaw = yaw_cmd
-    #print(iuslUAVCtrlCmd_data)
-    for i_tem in range(5):
-      my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
-      time.sleep(0.1)
+    iuslUAVCtrlCmd_data.z = UAV_alt_now - home_rtk.altitude 
+    iuslUAVCtrlCmd_data.yaw = cam_yaw_now
+    my_UAV_Control_cmd_publisher.publish(iuslUAVCtrlCmd_data)
     res = Obtain_control_handle(False)
     
 
@@ -382,6 +427,7 @@ while True:
   if bag_start:
     # 保存自己的状态
     my_state_for_bag = iuslMyState()
+    my_state_for_bag.time = time_now
     my_state_for_bag.UAV_lat = UAV_lat_now
     my_state_for_bag.UAV_lon = UAV_lon_now
     my_state_for_bag.UAV_alt = UAV_alt_now

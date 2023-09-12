@@ -324,7 +324,7 @@ while True:
   dt = time_now - img_detection_result.time
 
   # 重置估计器
-  if (dt > 6) or (not ground_mission_cmd): 
+  if (dt > 3) or (not ground_mission_cmd): 
     est_kf_OK = False
     kf_P = np.zeros([6, 6])
     kf_P[0, 0] = 0.1
