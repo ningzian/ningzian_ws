@@ -76,19 +76,27 @@ def callback_UAV_attitude(msg):
 
 
 # 接收自己的rtk状态
-# TODO 添加home_RTK的记录
 def callback_recive_rtkpos(msg):             
-  # 读取状态
+  # home rtk相关
   global home_rtk_OK
-  global home_rtk
-  global UAV_yaw_now
-  # 更新状态
+  global home_rtk_num
+  global home_rtk_msg
+  global bag_home_rtk
+  global bag_start
+  # 自己的状态更新
   global UAV_lat_now
   global UAV_lon_now
   global UAV_alt_now
   global UAV_center_x_now
   global UAV_center_y_now
   global UAV_center_z_now 
+
+  if (home_rtk_num < 200) and (msg.altitude > 0.5):
+    home_rtk_msg = msg
+    home_rtk_num += 1
+    home_rtk_OK = True
+    if bag_start:
+      bag_home_rtk.write('/iusl_bag/home_rtk', msg)
 
   if home_rtk_OK:
     # 计算无人机全局位置
@@ -114,7 +122,7 @@ def callback_recive_rtkpos(msg):
 # ==================================================================================
 # ==========================  custom functions   ===================================
 # ==================================================================================
-# TODO 修改为将rotor所在的位置转换到无人机中心的位置
+# 将rotor所在的位置转换到无人机中心的位置
 def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, UAV_yaw):
   # 计算rotor的全局位置信息
   UAV_lat = math.radians(UAV_lat)
@@ -127,7 +135,7 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
   UAV_y = d_lon * Ed
   UAV_z = home_alt - UAV_alt
   # 位置补偿的初始值
-  dpos_rotor_2_cam = np.array([[0.45], [-0.3], [0.25]])           
+  dpos_rotor_2_cam = np.array([[0.3], [-0.3], [0.08]]) 
   R_b2g_z = np.array([[math.cos(UAV_yaw), -math.sin(UAV_yaw), 0],
                       [math.sin(UAV_yaw), math.cos(UAV_yaw), 0],
                       [0, 0, 1]])
@@ -144,7 +152,8 @@ def calculate_cam_pos(UAV_lat, UAV_lon, UAV_alt, home_lat, home_lon, home_alt, U
 
 # 状态量（需要更新）
 home_rtk_OK = False     # home 原点的坐标
-home_rtk = NavSatFix()
+home_rtk_num = 0
+home_rtk_msg = NavSatFix()
 
 UAV_lat_now = 0.         # 自己的状态
 UAV_lon_now = 0.
@@ -187,9 +196,11 @@ while True:
   if (not bag_start) and ground_mission_cmd:
     bag_start = True
     bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
+    bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk.bag', 'w')
   elif bag_start and (not ground_mission_cmd):
     bag_start = False
     bag_my_state.close()
+    bag_home_rtk.close()
 
 
   # bag 保存
