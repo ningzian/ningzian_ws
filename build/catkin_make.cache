@@ -1,2 +1,0 @@
-Onboard-SDK-ROS:mavlink_bridge
--DCATKIN_DEVEL_PREFIX=/home/dji/ningzian_ws/devel -DCMAKE_INSTALL_PREFIX=/home/dji/ningzian_ws/install -G Unix Makefiles

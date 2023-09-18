@@ -1,8 +1,0 @@
-prefix=/home/dji/ningzian_ws/devel
-
-Name: dji_osdk_ros
-Description: Description of dji_osdk_ros
-Version: 4.0.0
-Cflags: -I/home/dji/ningzian_ws/devel/include -I/home/dji/ningzian_ws/src/Onboard-SDK-ROS/include
-Libs: -L/home/dji/ningzian_ws/devel/lib 
-Requires: message_runtime geometry_msgs nav_msgs std_msgs nmea_msgs
