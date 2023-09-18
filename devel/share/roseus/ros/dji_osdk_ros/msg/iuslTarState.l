@@ -14,11 +14,12 @@
 
 (defclass dji_osdk_ros::iuslTarState
   :super ros::object
-  :slots (_tar_OK _is_laser_measured _tar_x _tar_y _tar_z _tar_vx _tar_vy _fuse_dis ))
+  :slots (_time _tar_OK _is_laser_measured _tar_x _tar_y _tar_z _tar_vx _tar_vy _fuse_dis ))
 
 (defmethod dji_osdk_ros::iuslTarState
   (:init
    (&key
+    ((:time __time) 0.0)
     ((:tar_OK __tar_OK) nil)
     ((:is_laser_measured __is_laser_measured) nil)
     ((:tar_x __tar_x) 0.0)
@@ -29,6 +30,7 @@
     ((:fuse_dis __fuse_dis) 0.0)
     )
    (send-super :init)
+   (setq _time (float __time))
    (setq _tar_OK __tar_OK)
    (setq _is_laser_measured __is_laser_measured)
    (setq _tar_x (float __tar_x))
@@ -38,6 +40,9 @@
    (setq _tar_vy (float __tar_vy))
    (setq _fuse_dis (float __fuse_dis))
    self)
+  (:time
+   (&optional __time)
+   (if __time (setq _time __time)) _time)
   (:tar_OK
    (&optional __tar_OK)
    (if __tar_OK (setq _tar_OK __tar_OK)) _tar_OK)
@@ -65,6 +70,8 @@
   (:serialization-length
    ()
    (+
+    ;; float64 _time
+    8
     ;; bool _tar_OK
     1
     ;; bool _is_laser_measured
@@ -86,6 +93,8 @@
    (&optional strm)
    (let ((s (if strm strm
               (make-string-output-stream (send self :serialization-length)))))
+     ;; float64 _time
+       (sys::poke _time (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; bool _tar_OK
        (if _tar_OK (write-byte -1 s) (write-byte 0 s))
      ;; bool _is_laser_measured
@@ -106,6 +115,8 @@
      (if (null strm) (get-output-stream-string s))))
   (:deserialize
    (buf &optional (ptr- 0))
+   ;; float64 _time
+     (setq _time (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; bool _tar_OK
      (setq _tar_OK (not (= 0 (sys::peek buf ptr- :char)))) (incf ptr- 1)
    ;; bool _is_laser_measured
@@ -126,10 +137,12 @@
    self)
   )
 
-(setf (get dji_osdk_ros::iuslTarState :md5sum-) "b55949212e6e57bd4195732ade60e369")
+(setf (get dji_osdk_ros::iuslTarState :md5sum-) "d0db4d134f168ed502ff7b4539d66987")
 (setf (get dji_osdk_ros::iuslTarState :datatype-) "dji_osdk_ros/iuslTarState")
 (setf (get dji_osdk_ros::iuslTarState :definition-)
       "# estimated target UAV state
+
+float64 time
 
 bool tar_OK
 bool is_laser_measured
@@ -147,6 +160,6 @@ float64 fuse_dis
 
 
 
-(provide :dji_osdk_ros/iuslTarState "b55949212e6e57bd4195732ade60e369")
+(provide :dji_osdk_ros/iuslTarState "d0db4d134f168ed502ff7b4539d66987")
 
 

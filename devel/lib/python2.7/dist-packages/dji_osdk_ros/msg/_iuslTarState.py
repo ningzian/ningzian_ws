@@ -7,10 +7,12 @@ import struct
 
 
 class iuslTarState(genpy.Message):
-  _md5sum = "b55949212e6e57bd4195732ade60e369"
+  _md5sum = "d0db4d134f168ed502ff7b4539d66987"
   _type = "dji_osdk_ros/iuslTarState"
   _has_header = False #flag to mark the presence of a Header object
   _full_text = """# estimated target UAV state
+
+float64 time
 
 bool tar_OK
 bool is_laser_measured
@@ -24,8 +26,8 @@ float64 tar_vy
 float64 fuse_dis
 
 """
-  __slots__ = ['tar_OK','is_laser_measured','tar_x','tar_y','tar_z','tar_vx','tar_vy','fuse_dis']
-  _slot_types = ['bool','bool','float64','float64','float64','float64','float64','float64']
+  __slots__ = ['time','tar_OK','is_laser_measured','tar_x','tar_y','tar_z','tar_vx','tar_vy','fuse_dis']
+  _slot_types = ['float64','bool','bool','float64','float64','float64','float64','float64','float64']
 
   def __init__(self, *args, **kwds):
     """
@@ -35,7 +37,7 @@ float64 fuse_dis
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-       tar_OK,is_laser_measured,tar_x,tar_y,tar_z,tar_vx,tar_vy,fuse_dis
+       time,tar_OK,is_laser_measured,tar_x,tar_y,tar_z,tar_vx,tar_vy,fuse_dis
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
@@ -44,6 +46,8 @@ float64 fuse_dis
     if args or kwds:
       super(iuslTarState, self).__init__(*args, **kwds)
       #message fields cannot be None, assign default values for those that are
+      if self.time is None:
+        self.time = 0.
       if self.tar_OK is None:
         self.tar_OK = False
       if self.is_laser_measured is None:
@@ -61,6 +65,7 @@ float64 fuse_dis
       if self.fuse_dis is None:
         self.fuse_dis = 0.
     else:
+      self.time = 0.
       self.tar_OK = False
       self.is_laser_measured = False
       self.tar_x = 0.
@@ -83,7 +88,7 @@ float64 fuse_dis
     """
     try:
       _x = self
-      buff.write(_get_struct_2B6d().pack(_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis))
+      buff.write(_get_struct_d2B6d().pack(_x.time, _x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -96,8 +101,8 @@ float64 fuse_dis
       end = 0
       _x = self
       start = end
-      end += 50
-      (_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis,) = _get_struct_2B6d().unpack(str[start:end])
+      end += 58
+      (_x.time, _x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis,) = _get_struct_d2B6d().unpack(str[start:end])
       self.tar_OK = bool(self.tar_OK)
       self.is_laser_measured = bool(self.is_laser_measured)
       return self
@@ -113,7 +118,7 @@ float64 fuse_dis
     """
     try:
       _x = self
-      buff.write(_get_struct_2B6d().pack(_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis))
+      buff.write(_get_struct_d2B6d().pack(_x.time, _x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -127,8 +132,8 @@ float64 fuse_dis
       end = 0
       _x = self
       start = end
-      end += 50
-      (_x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis,) = _get_struct_2B6d().unpack(str[start:end])
+      end += 58
+      (_x.time, _x.tar_OK, _x.is_laser_measured, _x.tar_x, _x.tar_y, _x.tar_z, _x.tar_vx, _x.tar_vy, _x.fuse_dis,) = _get_struct_d2B6d().unpack(str[start:end])
       self.tar_OK = bool(self.tar_OK)
       self.is_laser_measured = bool(self.is_laser_measured)
       return self
@@ -139,9 +144,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_2B6d = None
-def _get_struct_2B6d():
-    global _struct_2B6d
-    if _struct_2B6d is None:
-        _struct_2B6d = struct.Struct("<2B6d")
-    return _struct_2B6d
+_struct_d2B6d = None
+def _get_struct_d2B6d():
+    global _struct_d2B6d
+    if _struct_d2B6d is None:
+        _struct_d2B6d = struct.Struct("<d2B6d")
+    return _struct_d2B6d

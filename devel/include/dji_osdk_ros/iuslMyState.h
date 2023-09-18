@@ -24,7 +24,8 @@ struct iuslMyState_
   typedef iuslMyState_<ContainerAllocator> Type;
 
   iuslMyState_()
-    : UAV_lat(0.0)
+    : time(0.0)
+    , UAV_lat(0.0)
     , UAV_lon(0.0)
     , UAV_alt(0.0)
     , UAV_yaw(0.0)
@@ -35,7 +36,8 @@ struct iuslMyState_
     , cam_z(0.0)  {
     }
   iuslMyState_(const ContainerAllocator& _alloc)
-    : UAV_lat(0.0)
+    : time(0.0)
+    , UAV_lat(0.0)
     , UAV_lon(0.0)
     , UAV_alt(0.0)
     , UAV_yaw(0.0)
@@ -48,6 +50,9 @@ struct iuslMyState_
     }
 
 
+
+   typedef double _time_type;
+  _time_type time;
 
    typedef double _UAV_lat_type;
   _UAV_lat_type UAV_lat;
@@ -154,12 +159,12 @@ struct MD5Sum< ::dji_osdk_ros::iuslMyState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "acb74560be271ca4b46ca1a39952dd6b";
+    return "27d296a0eab46d69158326fe8e2a6ff1";
   }
 
   static const char* value(const ::dji_osdk_ros::iuslMyState_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0xacb74560be271ca4ULL;
-  static const uint64_t static_value2 = 0xb46ca1a39952dd6bULL;
+  static const uint64_t static_value1 = 0x27d296a0eab46d69ULL;
+  static const uint64_t static_value2 = 0x158326fe8e2a6ff1ULL;
 };
 
 template<class ContainerAllocator>
@@ -178,7 +183,10 @@ struct Definition< ::dji_osdk_ros::iuslMyState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "float64 UAV_lat\n\
+    return "\n\
+float64 time\n\
+\n\
+float64 UAV_lat\n\
 float64 UAV_lon\n\
 float64 UAV_alt\n\
 float64 UAV_yaw\n\
@@ -206,6 +214,7 @@ namespace serialization
   {
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
+      stream.next(m.time);
       stream.next(m.UAV_lat);
       stream.next(m.UAV_lon);
       stream.next(m.UAV_alt);
@@ -233,6 +242,8 @@ struct Printer< ::dji_osdk_ros::iuslMyState_<ContainerAllocator> >
 {
   template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::dji_osdk_ros::iuslMyState_<ContainerAllocator>& v)
   {
+    s << indent << "time: ";
+    Printer<double>::stream(s, indent + "  ", v.time);
     s << indent << "UAV_lat: ";
     Printer<double>::stream(s, indent + "  ", v.UAV_lat);
     s << indent << "UAV_lon: ";

@@ -7,7 +7,12 @@
 ;//! \htmlinclude iuslTarState.msg.html
 
 (cl:defclass <iuslTarState> (roslisp-msg-protocol:ros-message)
-  ((tar_OK
+  ((time
+    :reader time
+    :initarg :time
+    :type cl:float
+    :initform 0.0)
+   (tar_OK
     :reader tar_OK
     :initarg :tar_OK
     :type cl:boolean
@@ -57,6 +62,11 @@
   (cl:unless (cl:typep m 'iuslTarState)
     (roslisp-msg-protocol:msg-deprecation-warning "using old message class name dji_osdk_ros-msg:<iuslTarState> is deprecated: use dji_osdk_ros-msg:iuslTarState instead.")))
 
+(cl:ensure-generic-function 'time-val :lambda-list '(m))
+(cl:defmethod time-val ((m <iuslTarState>))
+  (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader dji_osdk_ros-msg:time-val is deprecated.  Use dji_osdk_ros-msg:time instead.")
+  (time m))
+
 (cl:ensure-generic-function 'tar_OK-val :lambda-list '(m))
 (cl:defmethod tar_OK-val ((m <iuslTarState>))
   (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader dji_osdk_ros-msg:tar_OK-val is deprecated.  Use dji_osdk_ros-msg:tar_OK instead.")
@@ -98,6 +108,15 @@
   (fuse_dis m))
 (cl:defmethod roslisp-msg-protocol:serialize ((msg <iuslTarState>) ostream)
   "Serializes a message object of type '<iuslTarState>"
+  (cl:let ((bits (roslisp-utils:encode-double-float-bits (cl:slot-value msg 'time))))
+    (cl:write-byte (cl:ldb (cl:byte 8 0) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 8) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 16) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 24) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 32) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 40) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 48) bits) ostream)
+    (cl:write-byte (cl:ldb (cl:byte 8 56) bits) ostream))
   (cl:write-byte (cl:ldb (cl:byte 8 0) (cl:if (cl:slot-value msg 'tar_OK) 1 0)) ostream)
   (cl:write-byte (cl:ldb (cl:byte 8 0) (cl:if (cl:slot-value msg 'is_laser_measured) 1 0)) ostream)
   (cl:let ((bits (roslisp-utils:encode-double-float-bits (cl:slot-value msg 'tar_x))))
@@ -157,6 +176,16 @@
 )
 (cl:defmethod roslisp-msg-protocol:deserialize ((msg <iuslTarState>) istream)
   "Deserializes a message object of type '<iuslTarState>"
+    (cl:let ((bits 0))
+      (cl:setf (cl:ldb (cl:byte 8 0) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 8) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 16) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 24) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 32) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 40) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 48) bits) (cl:read-byte istream))
+      (cl:setf (cl:ldb (cl:byte 8 56) bits) (cl:read-byte istream))
+    (cl:setf (cl:slot-value msg 'time) (roslisp-utils:decode-double-float-bits bits)))
     (cl:setf (cl:slot-value msg 'tar_OK) (cl:not (cl:zerop (cl:read-byte istream))))
     (cl:setf (cl:slot-value msg 'is_laser_measured) (cl:not (cl:zerop (cl:read-byte istream))))
     (cl:let ((bits 0))
@@ -229,18 +258,19 @@
   "dji_osdk_ros/iuslTarState")
 (cl:defmethod roslisp-msg-protocol:md5sum ((type (cl:eql '<iuslTarState>)))
   "Returns md5sum for a message object of type '<iuslTarState>"
-  "b55949212e6e57bd4195732ade60e369")
+  "d0db4d134f168ed502ff7b4539d66987")
 (cl:defmethod roslisp-msg-protocol:md5sum ((type (cl:eql 'iuslTarState)))
   "Returns md5sum for a message object of type 'iuslTarState"
-  "b55949212e6e57bd4195732ade60e369")
+  "d0db4d134f168ed502ff7b4539d66987")
 (cl:defmethod roslisp-msg-protocol:message-definition ((type (cl:eql '<iuslTarState>)))
   "Returns full string definition for message of type '<iuslTarState>"
-  (cl:format cl:nil "# estimated target UAV state~%~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 fuse_dis~%~%~%~%"))
+  (cl:format cl:nil "# estimated target UAV state~%~%float64 time~%~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 fuse_dis~%~%~%~%"))
 (cl:defmethod roslisp-msg-protocol:message-definition ((type (cl:eql 'iuslTarState)))
   "Returns full string definition for message of type 'iuslTarState"
-  (cl:format cl:nil "# estimated target UAV state~%~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 fuse_dis~%~%~%~%"))
+  (cl:format cl:nil "# estimated target UAV state~%~%float64 time~%~%bool tar_OK~%bool is_laser_measured~%~%float64 tar_x~%float64 tar_y~%float64 tar_z~%float64 tar_vx~%float64 tar_vy~%~%float64 fuse_dis~%~%~%~%"))
 (cl:defmethod roslisp-msg-protocol:serialization-length ((msg <iuslTarState>))
   (cl:+ 0
+     8
      1
      1
      8
@@ -253,6 +283,7 @@
 (cl:defmethod roslisp-msg-protocol:ros-message-to-list ((msg <iuslTarState>))
   "Converts a ROS message object to a list"
   (cl:list 'iuslTarState
+    (cl:cons ':time (time msg))
     (cl:cons ':tar_OK (tar_OK msg))
     (cl:cons ':is_laser_measured (is_laser_measured msg))
     (cl:cons ':tar_x (tar_x msg))

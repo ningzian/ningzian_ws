@@ -18,6 +18,7 @@ class iuslMyState {
   constructor(initObj={}) {
     if (initObj === null) {
       // initObj === null is a special case for deserialization where we don't initialize fields
+      this.time = null;
       this.UAV_lat = null;
       this.UAV_lon = null;
       this.UAV_alt = null;
@@ -29,6 +30,12 @@ class iuslMyState {
       this.cam_z = null;
     }
     else {
+      if (initObj.hasOwnProperty('time')) {
+        this.time = initObj.time
+      }
+      else {
+        this.time = 0.0;
+      }
       if (initObj.hasOwnProperty('UAV_lat')) {
         this.UAV_lat = initObj.UAV_lat
       }
@@ -88,6 +95,8 @@ class iuslMyState {
 
   static serialize(obj, buffer, bufferOffset) {
     // Serializes a message object of type iuslMyState
+    // Serialize message field [time]
+    bufferOffset = _serializer.float64(obj.time, buffer, bufferOffset);
     // Serialize message field [UAV_lat]
     bufferOffset = _serializer.float64(obj.UAV_lat, buffer, bufferOffset);
     // Serialize message field [UAV_lon]
@@ -113,6 +122,8 @@ class iuslMyState {
     //deserializes a message object of type iuslMyState
     let len;
     let data = new iuslMyState(null);
+    // Deserialize message field [time]
+    data.time = _deserializer.float64(buffer, bufferOffset);
     // Deserialize message field [UAV_lat]
     data.UAV_lat = _deserializer.float64(buffer, bufferOffset);
     // Deserialize message field [UAV_lon]
@@ -135,7 +146,7 @@ class iuslMyState {
   }
 
   static getMessageSize(object) {
-    return 72;
+    return 80;
   }
 
   static datatype() {
@@ -145,12 +156,15 @@ class iuslMyState {
 
   static md5sum() {
     //Returns md5sum for a message object
-    return 'acb74560be271ca4b46ca1a39952dd6b';
+    return '27d296a0eab46d69158326fe8e2a6ff1';
   }
 
   static messageDefinition() {
     // Returns full string definition for message
     return `
+    
+    float64 time
+    
     float64 UAV_lat
     float64 UAV_lon
     float64 UAV_alt
@@ -171,6 +185,13 @@ class iuslMyState {
       msg = {};
     }
     const resolved = new iuslMyState(null);
+    if (msg.time !== undefined) {
+      resolved.time = msg.time;
+    }
+    else {
+      resolved.time = 0.0
+    }
+
     if (msg.UAV_lat !== undefined) {
       resolved.UAV_lat = msg.UAV_lat;
     }
