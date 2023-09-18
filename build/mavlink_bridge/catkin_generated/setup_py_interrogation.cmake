@@ -1,0 +1,6 @@
+set(mavlink_bridge_SETUP_PY_VERSION "0.0.1")
+set(mavlink_bridge_SETUP_PY_SCRIPTS "")
+set(mavlink_bridge_SETUP_PY_PACKAGES "")
+set(mavlink_bridge_SETUP_PY_PACKAGE_DIRS "")
+set(mavlink_bridge_SETUP_PY_MODULES "")
+set(mavlink_bridge_SETUP_PY_MODULE_DIRS "")
