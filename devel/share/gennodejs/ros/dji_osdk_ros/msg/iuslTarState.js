@@ -18,6 +18,7 @@ class iuslTarState {
   constructor(initObj={}) {
     if (initObj === null) {
       // initObj === null is a special case for deserialization where we don't initialize fields
+      this.time = null;
       this.tar_OK = null;
       this.is_laser_measured = null;
       this.tar_x = null;
@@ -28,6 +29,12 @@ class iuslTarState {
       this.fuse_dis = null;
     }
     else {
+      if (initObj.hasOwnProperty('time')) {
+        this.time = initObj.time
+      }
+      else {
+        this.time = 0.0;
+      }
       if (initObj.hasOwnProperty('tar_OK')) {
         this.tar_OK = initObj.tar_OK
       }
@@ -81,6 +88,8 @@ class iuslTarState {
 
   static serialize(obj, buffer, bufferOffset) {
     // Serializes a message object of type iuslTarState
+    // Serialize message field [time]
+    bufferOffset = _serializer.float64(obj.time, buffer, bufferOffset);
     // Serialize message field [tar_OK]
     bufferOffset = _serializer.bool(obj.tar_OK, buffer, bufferOffset);
     // Serialize message field [is_laser_measured]
@@ -104,6 +113,8 @@ class iuslTarState {
     //deserializes a message object of type iuslTarState
     let len;
     let data = new iuslTarState(null);
+    // Deserialize message field [time]
+    data.time = _deserializer.float64(buffer, bufferOffset);
     // Deserialize message field [tar_OK]
     data.tar_OK = _deserializer.bool(buffer, bufferOffset);
     // Deserialize message field [is_laser_measured]
@@ -124,7 +135,7 @@ class iuslTarState {
   }
 
   static getMessageSize(object) {
-    return 50;
+    return 58;
   }
 
   static datatype() {
@@ -134,13 +145,15 @@ class iuslTarState {
 
   static md5sum() {
     //Returns md5sum for a message object
-    return 'b55949212e6e57bd4195732ade60e369';
+    return 'd0db4d134f168ed502ff7b4539d66987';
   }
 
   static messageDefinition() {
     // Returns full string definition for message
     return `
     # estimated target UAV state
+    
+    float64 time
     
     bool tar_OK
     bool is_laser_measured
@@ -163,6 +176,13 @@ class iuslTarState {
       msg = {};
     }
     const resolved = new iuslTarState(null);
+    if (msg.time !== undefined) {
+      resolved.time = msg.time;
+    }
+    else {
+      resolved.time = 0.0
+    }
+
     if (msg.tar_OK !== undefined) {
       resolved.tar_OK = msg.tar_OK;
     }

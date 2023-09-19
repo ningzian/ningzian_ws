@@ -1,5 +1,7 @@
 (cl:in-package dji_osdk_ros-msg)
-(cl:export '(TAR_OK-VAL
+(cl:export '(TIME-VAL
+          TIME
+          TAR_OK-VAL
           TAR_OK
           IS_LASER_MEASURED-VAL
           IS_LASER_MEASURED

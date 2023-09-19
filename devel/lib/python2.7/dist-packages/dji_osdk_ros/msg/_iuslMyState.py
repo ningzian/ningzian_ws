@@ -7,10 +7,13 @@ import struct
 
 
 class iuslMyState(genpy.Message):
-  _md5sum = "acb74560be271ca4b46ca1a39952dd6b"
+  _md5sum = "27d296a0eab46d69158326fe8e2a6ff1"
   _type = "dji_osdk_ros/iuslMyState"
   _has_header = False #flag to mark the presence of a Header object
-  _full_text = """float64 UAV_lat
+  _full_text = """
+float64 time
+
+float64 UAV_lat
 float64 UAV_lon
 float64 UAV_alt
 float64 UAV_yaw
@@ -21,8 +24,8 @@ float64 cam_y
 float64 cam_z
 
 """
-  __slots__ = ['UAV_lat','UAV_lon','UAV_alt','UAV_yaw','UAV_vx','UAV_vy','cam_x','cam_y','cam_z']
-  _slot_types = ['float64','float64','float64','float64','float64','float64','float64','float64','float64']
+  __slots__ = ['time','UAV_lat','UAV_lon','UAV_alt','UAV_yaw','UAV_vx','UAV_vy','cam_x','cam_y','cam_z']
+  _slot_types = ['float64','float64','float64','float64','float64','float64','float64','float64','float64','float64']
 
   def __init__(self, *args, **kwds):
     """
@@ -32,7 +35,7 @@ float64 cam_z
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-       UAV_lat,UAV_lon,UAV_alt,UAV_yaw,UAV_vx,UAV_vy,cam_x,cam_y,cam_z
+       time,UAV_lat,UAV_lon,UAV_alt,UAV_yaw,UAV_vx,UAV_vy,cam_x,cam_y,cam_z
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
@@ -41,6 +44,8 @@ float64 cam_z
     if args or kwds:
       super(iuslMyState, self).__init__(*args, **kwds)
       #message fields cannot be None, assign default values for those that are
+      if self.time is None:
+        self.time = 0.
       if self.UAV_lat is None:
         self.UAV_lat = 0.
       if self.UAV_lon is None:
@@ -60,6 +65,7 @@ float64 cam_z
       if self.cam_z is None:
         self.cam_z = 0.
     else:
+      self.time = 0.
       self.UAV_lat = 0.
       self.UAV_lon = 0.
       self.UAV_alt = 0.
@@ -83,7 +89,7 @@ float64 cam_z
     """
     try:
       _x = self
-      buff.write(_get_struct_9d().pack(_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z))
+      buff.write(_get_struct_10d().pack(_x.time, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -96,8 +102,8 @@ float64 cam_z
       end = 0
       _x = self
       start = end
-      end += 72
-      (_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z,) = _get_struct_9d().unpack(str[start:end])
+      end += 80
+      (_x.time, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z,) = _get_struct_10d().unpack(str[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -111,7 +117,7 @@ float64 cam_z
     """
     try:
       _x = self
-      buff.write(_get_struct_9d().pack(_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z))
+      buff.write(_get_struct_10d().pack(_x.time, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -125,8 +131,8 @@ float64 cam_z
       end = 0
       _x = self
       start = end
-      end += 72
-      (_x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z,) = _get_struct_9d().unpack(str[start:end])
+      end += 80
+      (_x.time, _x.UAV_lat, _x.UAV_lon, _x.UAV_alt, _x.UAV_yaw, _x.UAV_vx, _x.UAV_vy, _x.cam_x, _x.cam_y, _x.cam_z,) = _get_struct_10d().unpack(str[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e) #most likely buffer underfill
@@ -135,9 +141,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_9d = None
-def _get_struct_9d():
-    global _struct_9d
-    if _struct_9d is None:
-        _struct_9d = struct.Struct("<9d")
-    return _struct_9d
+_struct_10d = None
+def _get_struct_10d():
+    global _struct_10d
+    if _struct_10d is None:
+        _struct_10d = struct.Struct("<10d")
+    return _struct_10d

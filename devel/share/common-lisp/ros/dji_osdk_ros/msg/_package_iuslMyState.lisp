@@ -1,5 +1,7 @@
 (cl:in-package dji_osdk_ros-msg)
-(cl:export '(UAV_LAT-VAL
+(cl:export '(TIME-VAL
+          TIME
+          UAV_LAT-VAL
           UAV_LAT
           UAV_LON-VAL
           UAV_LON

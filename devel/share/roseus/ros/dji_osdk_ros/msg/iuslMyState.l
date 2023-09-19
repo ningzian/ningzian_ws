@@ -14,11 +14,12 @@
 
 (defclass dji_osdk_ros::iuslMyState
   :super ros::object
-  :slots (_UAV_lat _UAV_lon _UAV_alt _UAV_yaw _UAV_vx _UAV_vy _cam_x _cam_y _cam_z ))
+  :slots (_time _UAV_lat _UAV_lon _UAV_alt _UAV_yaw _UAV_vx _UAV_vy _cam_x _cam_y _cam_z ))
 
 (defmethod dji_osdk_ros::iuslMyState
   (:init
    (&key
+    ((:time __time) 0.0)
     ((:UAV_lat __UAV_lat) 0.0)
     ((:UAV_lon __UAV_lon) 0.0)
     ((:UAV_alt __UAV_alt) 0.0)
@@ -30,6 +31,7 @@
     ((:cam_z __cam_z) 0.0)
     )
    (send-super :init)
+   (setq _time (float __time))
    (setq _UAV_lat (float __UAV_lat))
    (setq _UAV_lon (float __UAV_lon))
    (setq _UAV_alt (float __UAV_alt))
@@ -40,6 +42,9 @@
    (setq _cam_y (float __cam_y))
    (setq _cam_z (float __cam_z))
    self)
+  (:time
+   (&optional __time)
+   (if __time (setq _time __time)) _time)
   (:UAV_lat
    (&optional __UAV_lat)
    (if __UAV_lat (setq _UAV_lat __UAV_lat)) _UAV_lat)
@@ -70,6 +75,8 @@
   (:serialization-length
    ()
    (+
+    ;; float64 _time
+    8
     ;; float64 _UAV_lat
     8
     ;; float64 _UAV_lon
@@ -93,6 +100,8 @@
    (&optional strm)
    (let ((s (if strm strm
               (make-string-output-stream (send self :serialization-length)))))
+     ;; float64 _time
+       (sys::poke _time (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _UAV_lat
        (sys::poke _UAV_lat (send s :buffer) (send s :count) :double) (incf (stream-count s) 8)
      ;; float64 _UAV_lon
@@ -115,6 +124,8 @@
      (if (null strm) (get-output-stream-string s))))
   (:deserialize
    (buf &optional (ptr- 0))
+   ;; float64 _time
+     (setq _time (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _UAV_lat
      (setq _UAV_lat (sys::peek buf ptr- :double)) (incf ptr- 8)
    ;; float64 _UAV_lon
@@ -137,10 +148,13 @@
    self)
   )
 
-(setf (get dji_osdk_ros::iuslMyState :md5sum-) "acb74560be271ca4b46ca1a39952dd6b")
+(setf (get dji_osdk_ros::iuslMyState :md5sum-) "27d296a0eab46d69158326fe8e2a6ff1")
 (setf (get dji_osdk_ros::iuslMyState :datatype-) "dji_osdk_ros/iuslMyState")
 (setf (get dji_osdk_ros::iuslMyState :definition-)
-      "float64 UAV_lat
+      "
+float64 time
+
+float64 UAV_lat
 float64 UAV_lon
 float64 UAV_alt
 float64 UAV_yaw
@@ -155,6 +169,6 @@ float64 cam_z
 
 
 
-(provide :dji_osdk_ros/iuslMyState "acb74560be271ca4b46ca1a39952dd6b")
+(provide :dji_osdk_ros/iuslMyState "27d296a0eab46d69158326fe8e2a6ff1")
 
 

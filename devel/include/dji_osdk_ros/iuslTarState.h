@@ -24,7 +24,8 @@ struct iuslTarState_
   typedef iuslTarState_<ContainerAllocator> Type;
 
   iuslTarState_()
-    : tar_OK(false)
+    : time(0.0)
+    , tar_OK(false)
     , is_laser_measured(false)
     , tar_x(0.0)
     , tar_y(0.0)
@@ -34,7 +35,8 @@ struct iuslTarState_
     , fuse_dis(0.0)  {
     }
   iuslTarState_(const ContainerAllocator& _alloc)
-    : tar_OK(false)
+    : time(0.0)
+    , tar_OK(false)
     , is_laser_measured(false)
     , tar_x(0.0)
     , tar_y(0.0)
@@ -46,6 +48,9 @@ struct iuslTarState_
     }
 
 
+
+   typedef double _time_type;
+  _time_type time;
 
    typedef uint8_t _tar_OK_type;
   _tar_OK_type tar_OK;
@@ -149,12 +154,12 @@ struct MD5Sum< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "b55949212e6e57bd4195732ade60e369";
+    return "d0db4d134f168ed502ff7b4539d66987";
   }
 
   static const char* value(const ::dji_osdk_ros::iuslTarState_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0xb55949212e6e57bdULL;
-  static const uint64_t static_value2 = 0x4195732ade60e369ULL;
+  static const uint64_t static_value1 = 0xd0db4d134f168ed5ULL;
+  static const uint64_t static_value2 = 0x02ff7b4539d66987ULL;
 };
 
 template<class ContainerAllocator>
@@ -174,6 +179,8 @@ struct Definition< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
   static const char* value()
   {
     return "# estimated target UAV state\n\
+\n\
+float64 time\n\
 \n\
 bool tar_OK\n\
 bool is_laser_measured\n\
@@ -204,6 +211,7 @@ namespace serialization
   {
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
+      stream.next(m.time);
       stream.next(m.tar_OK);
       stream.next(m.is_laser_measured);
       stream.next(m.tar_x);
@@ -230,6 +238,8 @@ struct Printer< ::dji_osdk_ros::iuslTarState_<ContainerAllocator> >
 {
   template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::dji_osdk_ros::iuslTarState_<ContainerAllocator>& v)
   {
+    s << indent << "time: ";
+    Printer<double>::stream(s, indent + "  ", v.time);
     s << indent << "tar_OK: ";
     Printer<uint8_t>::stream(s, indent + "  ", v.tar_OK);
     s << indent << "is_laser_measured: ";
