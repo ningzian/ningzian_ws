@@ -32,6 +32,14 @@ from dji_osdk_ros.srv import ObtainControlAuthority
 # ====================== receive msg call back =============================================
 # ==========================================================================================
 
+def callback_flight_state(msg):
+  global is_flight
+  if msg.data > 0.1:
+    is_flight = True
+  else:
+    is_flight = False
+  return
+
 # 接收遥控器的指令，更新两个flag
 def callback_mobile_data(msg):
   global ground_mission_cmd  # 遥控器指令：跟踪或者手动飞行
@@ -168,6 +176,7 @@ UAV_center_y_now = 0.
 UAV_center_z_now = 0.
 
 ground_mission_cmd = False
+is_flight = False
 bag_start = False
 
 
@@ -184,6 +193,7 @@ rate = rospy.Rate(50)
 rospy.Subscriber('/dji_osdk_ros/from_mobile_data/', MobileData ,callback_mobile_data)
 
 # sub msg for 自己的飞行状态
+rospy.Subscriber('/dji_osdk_ros/flight_status', Uint8, callback_flight_state)                 # 接收飞机的飞行状态
 rospy.Subscriber('/dji_osdk_ros/rtk_position', NavSatFix , callback_recive_rtkpos)            # my rtk pos
 rospy.Subscriber('dji_osdk_ros/rtk_velocity', Vector3Stamped, callback_recive_rtkvel)         # my rtk vel
 rospy.Subscriber('/dji_osdk_ros/rtk_yaw', Int16, callback_recive_rtkYaw) 
@@ -193,11 +203,11 @@ rospy.Subscriber('dji_osdk_ros/attitude', QuaternionStamped, callback_UAV_attitu
 # 开始循环
 while True:
   # bag 的开始和结束
-  if (not bag_start) and ground_mission_cmd:
+  if (not bag_start) and (is_flight or ground_mission_cmd):
     bag_start = True
     bag_my_state = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'my_state.bag', 'w')
     bag_home_rtk = rosbag.Bag('/home/dji/bigDisk/bag/' + time.strftime("%Y-%m-%d--%I-%M-%S") + 'home_rtk.bag', 'w')
-  elif bag_start and (not ground_mission_cmd):
+  elif bag_start and ((not ground_mission_cmd) or (not is_flight)):
     bag_start = False
     bag_my_state.close()
     bag_home_rtk.close()
